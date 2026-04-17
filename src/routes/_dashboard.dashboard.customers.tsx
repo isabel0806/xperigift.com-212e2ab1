@@ -277,7 +277,7 @@ function CustomerDetailSheet({
                             </p>
                             <span
                               className={`inline-flex items-center gap-1 text-[13px] font-medium tabular-nums ${
-                                positive ? 'text-emerald-700' : 'text-ink'
+                                positive ? 'text-emerald-deep' : 'text-ink'
                               }`}
                             >
                               {positive ? (

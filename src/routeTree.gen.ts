@@ -17,6 +17,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardDashboardRouteImport } from './routes/_dashboard.dashboard'
+import { Route as DashboardDashboardIndexRouteImport } from './routes/_dashboard.dashboard.index'
 import { Route as DashboardDashboardSalesRouteImport } from './routes/_dashboard.dashboard.sales'
 import { Route as DashboardDashboardEmailsRouteImport } from './routes/_dashboard.dashboard.emails'
 import { Route as DashboardDashboardCustomersRouteImport } from './routes/_dashboard.dashboard.customers'
@@ -62,6 +63,11 @@ const DashboardDashboardRoute = DashboardDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardDashboardIndexRoute = DashboardDashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardDashboardRoute,
+} as any)
 const DashboardDashboardSalesRoute = DashboardDashboardSalesRouteImport.update({
   id: '/sales',
   path: '/sales',
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/customers': typeof DashboardDashboardCustomersRoute
   '/dashboard/emails': typeof DashboardDashboardEmailsRoute
   '/dashboard/sales': typeof DashboardDashboardSalesRoute
+  '/dashboard/': typeof DashboardDashboardIndexRoute
   '/dashboard/admin/bookings': typeof DashboardDashboardAdminBookingsRoute
   '/dashboard/admin/clients': typeof DashboardDashboardAdminClientsRoute
 }
@@ -113,10 +120,10 @@ export interface FileRoutesByTo {
   '/how-it-works': typeof HowItWorksRoute
   '/industries': typeof IndustriesRoute
   '/login': typeof LoginRoute
-  '/dashboard': typeof DashboardDashboardRouteWithChildren
   '/dashboard/customers': typeof DashboardDashboardCustomersRoute
   '/dashboard/emails': typeof DashboardDashboardEmailsRoute
   '/dashboard/sales': typeof DashboardDashboardSalesRoute
+  '/dashboard': typeof DashboardDashboardIndexRoute
   '/dashboard/admin/bookings': typeof DashboardDashboardAdminBookingsRoute
   '/dashboard/admin/clients': typeof DashboardDashboardAdminClientsRoute
 }
@@ -133,6 +140,7 @@ export interface FileRoutesById {
   '/_dashboard/dashboard/customers': typeof DashboardDashboardCustomersRoute
   '/_dashboard/dashboard/emails': typeof DashboardDashboardEmailsRoute
   '/_dashboard/dashboard/sales': typeof DashboardDashboardSalesRoute
+  '/_dashboard/dashboard/': typeof DashboardDashboardIndexRoute
   '/_dashboard/dashboard/admin/bookings': typeof DashboardDashboardAdminBookingsRoute
   '/_dashboard/dashboard/admin/clients': typeof DashboardDashboardAdminClientsRoute
 }
@@ -149,6 +157,7 @@ export interface FileRouteTypes {
     | '/dashboard/customers'
     | '/dashboard/emails'
     | '/dashboard/sales'
+    | '/dashboard/'
     | '/dashboard/admin/bookings'
     | '/dashboard/admin/clients'
   fileRoutesByTo: FileRoutesByTo
@@ -159,10 +168,10 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/industries'
     | '/login'
-    | '/dashboard'
     | '/dashboard/customers'
     | '/dashboard/emails'
     | '/dashboard/sales'
+    | '/dashboard'
     | '/dashboard/admin/bookings'
     | '/dashboard/admin/clients'
   id:
@@ -178,6 +187,7 @@ export interface FileRouteTypes {
     | '/_dashboard/dashboard/customers'
     | '/_dashboard/dashboard/emails'
     | '/_dashboard/dashboard/sales'
+    | '/_dashboard/dashboard/'
     | '/_dashboard/dashboard/admin/bookings'
     | '/_dashboard/dashboard/admin/clients'
   fileRoutesById: FileRoutesById
@@ -250,6 +260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardDashboardRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_dashboard/dashboard/': {
+      id: '/_dashboard/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardDashboardIndexRouteImport
+      parentRoute: typeof DashboardDashboardRoute
+    }
     '/_dashboard/dashboard/sales': {
       id: '/_dashboard/dashboard/sales'
       path: '/sales'
@@ -292,6 +309,7 @@ interface DashboardDashboardRouteChildren {
   DashboardDashboardCustomersRoute: typeof DashboardDashboardCustomersRoute
   DashboardDashboardEmailsRoute: typeof DashboardDashboardEmailsRoute
   DashboardDashboardSalesRoute: typeof DashboardDashboardSalesRoute
+  DashboardDashboardIndexRoute: typeof DashboardDashboardIndexRoute
   DashboardDashboardAdminBookingsRoute: typeof DashboardDashboardAdminBookingsRoute
   DashboardDashboardAdminClientsRoute: typeof DashboardDashboardAdminClientsRoute
 }
@@ -300,6 +318,7 @@ const DashboardDashboardRouteChildren: DashboardDashboardRouteChildren = {
   DashboardDashboardCustomersRoute: DashboardDashboardCustomersRoute,
   DashboardDashboardEmailsRoute: DashboardDashboardEmailsRoute,
   DashboardDashboardSalesRoute: DashboardDashboardSalesRoute,
+  DashboardDashboardIndexRoute: DashboardDashboardIndexRoute,
   DashboardDashboardAdminBookingsRoute: DashboardDashboardAdminBookingsRoute,
   DashboardDashboardAdminClientsRoute: DashboardDashboardAdminClientsRoute,
 }

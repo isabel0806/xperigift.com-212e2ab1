@@ -27,7 +27,7 @@ const createClientSchema = z.object({
 });
 
 export const createClientAccount = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .inputValidator((input: unknown) => createClientSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
@@ -54,7 +54,7 @@ const inviteUserSchema = z.object({
 });
 
 export const inviteClientUser = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .inputValidator((input: unknown) => inviteUserSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
@@ -113,7 +113,7 @@ const removeMembershipSchema = z.object({
 });
 
 export const removeClientUser = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .inputValidator((input: unknown) => removeMembershipSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);
@@ -130,7 +130,7 @@ export const removeClientUser = createServerFn({ method: 'POST' })
 const listUsersSchema = z.object({ clientId: z.string().uuid() });
 
 export const listClientMembers = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .inputValidator((input: unknown) => listUsersSchema.parse(input))
   .handler(async ({ data, context }) => {
     await assertAdmin(context.userId);

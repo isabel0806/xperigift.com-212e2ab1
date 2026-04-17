@@ -9,34 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as EmployeesRouteImport } from './routes/employees'
-import { Route as AiChatRouteImport } from './routes/ai-chat'
+import { Route as IndustriesRouteImport } from './routes/industries'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
+import { Route as BookAuditRouteImport } from './routes/book-audit'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AssetsIndexRouteImport } from './routes/assets.index'
-import { Route as AssetsNewRouteImport } from './routes/assets.new'
-import { Route as AssetsAssetIdRouteImport } from './routes/assets.$assetId'
-import { Route as AssetsAssetIdEditRouteImport } from './routes/assets.$assetId.edit'
 
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const IndustriesRoute = IndustriesRouteImport.update({
+  id: '/industries',
+  path: '/industries',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EmployeesRoute = EmployeesRouteImport.update({
-  id: '/employees',
-  path: '/employees',
+const BookAuditRoute = BookAuditRouteImport.update({
+  id: '/book-audit',
+  path: '/book-audit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AiChatRoute = AiChatRouteImport.update({
-  id: '/ai-chat',
-  path: '/ai-chat',
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -44,136 +40,79 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AssetsIndexRoute = AssetsIndexRouteImport.update({
-  id: '/assets/',
-  path: '/assets/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AssetsNewRoute = AssetsNewRouteImport.update({
-  id: '/assets/new',
-  path: '/assets/new',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AssetsAssetIdRoute = AssetsAssetIdRouteImport.update({
-  id: '/assets/$assetId',
-  path: '/assets/$assetId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AssetsAssetIdEditRoute = AssetsAssetIdEditRouteImport.update({
-  id: '/edit',
-  path: '/edit',
-  getParentRoute: () => AssetsAssetIdRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/ai-chat': typeof AiChatRoute
-  '/employees': typeof EmployeesRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/settings': typeof SettingsRoute
-  '/assets/$assetId': typeof AssetsAssetIdRouteWithChildren
-  '/assets/new': typeof AssetsNewRoute
-  '/assets/': typeof AssetsIndexRoute
-  '/assets/$assetId/edit': typeof AssetsAssetIdEditRoute
+  '/about': typeof AboutRoute
+  '/book-audit': typeof BookAuditRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/industries': typeof IndustriesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/ai-chat': typeof AiChatRoute
-  '/employees': typeof EmployeesRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/settings': typeof SettingsRoute
-  '/assets/$assetId': typeof AssetsAssetIdRouteWithChildren
-  '/assets/new': typeof AssetsNewRoute
-  '/assets': typeof AssetsIndexRoute
-  '/assets/$assetId/edit': typeof AssetsAssetIdEditRoute
+  '/about': typeof AboutRoute
+  '/book-audit': typeof BookAuditRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/industries': typeof IndustriesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/ai-chat': typeof AiChatRoute
-  '/employees': typeof EmployeesRoute
-  '/reset-password': typeof ResetPasswordRoute
-  '/settings': typeof SettingsRoute
-  '/assets/$assetId': typeof AssetsAssetIdRouteWithChildren
-  '/assets/new': typeof AssetsNewRoute
-  '/assets/': typeof AssetsIndexRoute
-  '/assets/$assetId/edit': typeof AssetsAssetIdEditRoute
+  '/about': typeof AboutRoute
+  '/book-audit': typeof BookAuditRoute
+  '/how-it-works': typeof HowItWorksRoute
+  '/industries': typeof IndustriesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/ai-chat'
-    | '/employees'
-    | '/reset-password'
-    | '/settings'
-    | '/assets/$assetId'
-    | '/assets/new'
-    | '/assets/'
-    | '/assets/$assetId/edit'
+  fullPaths: '/' | '/about' | '/book-audit' | '/how-it-works' | '/industries'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/ai-chat'
-    | '/employees'
-    | '/reset-password'
-    | '/settings'
-    | '/assets/$assetId'
-    | '/assets/new'
-    | '/assets'
-    | '/assets/$assetId/edit'
+  to: '/' | '/about' | '/book-audit' | '/how-it-works' | '/industries'
   id:
     | '__root__'
     | '/'
-    | '/ai-chat'
-    | '/employees'
-    | '/reset-password'
-    | '/settings'
-    | '/assets/$assetId'
-    | '/assets/new'
-    | '/assets/'
-    | '/assets/$assetId/edit'
+    | '/about'
+    | '/book-audit'
+    | '/how-it-works'
+    | '/industries'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AiChatRoute: typeof AiChatRoute
-  EmployeesRoute: typeof EmployeesRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
-  SettingsRoute: typeof SettingsRoute
-  AssetsAssetIdRoute: typeof AssetsAssetIdRouteWithChildren
-  AssetsNewRoute: typeof AssetsNewRoute
-  AssetsIndexRoute: typeof AssetsIndexRoute
+  AboutRoute: typeof AboutRoute
+  BookAuditRoute: typeof BookAuditRoute
+  HowItWorksRoute: typeof HowItWorksRoute
+  IndustriesRoute: typeof IndustriesRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
+    '/industries': {
+      id: '/industries'
+      path: '/industries'
+      fullPath: '/industries'
+      preLoaderRoute: typeof IndustriesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/employees': {
-      id: '/employees'
-      path: '/employees'
-      fullPath: '/employees'
-      preLoaderRoute: typeof EmployeesRouteImport
+    '/book-audit': {
+      id: '/book-audit'
+      path: '/book-audit'
+      fullPath: '/book-audit'
+      preLoaderRoute: typeof BookAuditRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/ai-chat': {
-      id: '/ai-chat'
-      path: '/ai-chat'
-      fullPath: '/ai-chat'
-      preLoaderRoute: typeof AiChatRouteImport
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -183,58 +122,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/assets/': {
-      id: '/assets/'
-      path: '/assets'
-      fullPath: '/assets/'
-      preLoaderRoute: typeof AssetsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/assets/new': {
-      id: '/assets/new'
-      path: '/assets/new'
-      fullPath: '/assets/new'
-      preLoaderRoute: typeof AssetsNewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/assets/$assetId': {
-      id: '/assets/$assetId'
-      path: '/assets/$assetId'
-      fullPath: '/assets/$assetId'
-      preLoaderRoute: typeof AssetsAssetIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/assets/$assetId/edit': {
-      id: '/assets/$assetId/edit'
-      path: '/edit'
-      fullPath: '/assets/$assetId/edit'
-      preLoaderRoute: typeof AssetsAssetIdEditRouteImport
-      parentRoute: typeof AssetsAssetIdRoute
-    }
   }
 }
 
-interface AssetsAssetIdRouteChildren {
-  AssetsAssetIdEditRoute: typeof AssetsAssetIdEditRoute
-}
-
-const AssetsAssetIdRouteChildren: AssetsAssetIdRouteChildren = {
-  AssetsAssetIdEditRoute: AssetsAssetIdEditRoute,
-}
-
-const AssetsAssetIdRouteWithChildren = AssetsAssetIdRoute._addFileChildren(
-  AssetsAssetIdRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AiChatRoute: AiChatRoute,
-  EmployeesRoute: EmployeesRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
-  SettingsRoute: SettingsRoute,
-  AssetsAssetIdRoute: AssetsAssetIdRouteWithChildren,
-  AssetsNewRoute: AssetsNewRoute,
-  AssetsIndexRoute: AssetsIndexRoute,
+  AboutRoute: AboutRoute,
+  BookAuditRoute: BookAuditRoute,
+  HowItWorksRoute: HowItWorksRoute,
+  IndustriesRoute: IndustriesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

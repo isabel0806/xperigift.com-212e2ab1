@@ -168,7 +168,13 @@ function EmailsPage() {
               drafts.data?.map((d) => (
                 <tr key={d.id} className="border-b border-hairline last:border-0 align-top">
                   <td className="px-4 py-3">
-                    <div className="text-ink">{d.subject}</div>
+                    <button
+                      onClick={() => setEditing(d)}
+                      className="text-left text-ink hover:underline"
+                      title="Open campaign"
+                    >
+                      {d.subject || '(untitled)'}
+                    </button>
                     {d.preheader && (
                       <div className="text-[12px] text-ink-muted truncate max-w-xs">{d.preheader}</div>
                     )}

@@ -266,6 +266,71 @@ function SalesPage() {
         />
       </div>
 
+      {/* Monthly trend */}
+      <div className="mt-8 rounded-sm border border-hairline bg-paper p-6">
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <LineChartIcon className="h-4 w-4 text-ink-soft" />
+            <h2 className="font-display text-[18px] text-ink">Revenue trend</h2>
+          </div>
+          <span className="text-[12px] text-ink-muted">Last 12 months</span>
+        </div>
+        {sales.isLoading ? (
+          <p className="py-8 text-center text-[13px] text-ink-muted">Loading…</p>
+        ) : (sales.data?.length ?? 0) === 0 ? (
+          <p className="py-8 text-center text-[13px] text-ink-muted">
+            No sales yet. Import a CSV to see month-over-month evolution.
+          </p>
+        ) : (
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={monthlyTrend} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={CHART_PALETTE[0]} stopOpacity={0.35} />
+                    <stop offset="95%" stopColor={CHART_PALETTE[0]} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.9 0.01 90)" vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 12, fill: 'oklch(0.5 0.02 90)' }}
+                  tickLine={false}
+                  axisLine={{ stroke: 'oklch(0.88 0.01 90)' }}
+                />
+                <YAxis
+                  tick={{ fontSize: 12, fill: 'oklch(0.5 0.02 90)' }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v: number) => `$${formatNumber(v)}`}
+                  width={70}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: 'oklch(0.99 0.005 90)',
+                    border: '1px solid oklch(0.88 0.01 90)',
+                    borderRadius: 4,
+                    fontSize: 12,
+                  }}
+                  formatter={(value: number, name: string) =>
+                    name === 'revenue'
+                      ? [`$${formatNumber(value)}`, 'Revenue']
+                      : [formatNumber(value), 'Cards']
+                  }
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke={CHART_PALETTE[0]}
+                  strokeWidth={2}
+                  fill="url(#revGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
       {/* Product breakdown */}
       <div className="mt-8 rounded-sm border border-hairline bg-paper p-6">
         <div className="mb-5 flex items-center justify-between">

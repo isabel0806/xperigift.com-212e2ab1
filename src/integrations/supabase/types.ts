@@ -131,6 +131,236 @@ export type Database = {
         }
         Relationships: []
       }
+      client_users: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_users_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          created_at: string
+          id: string
+          industry: Database["public"]["Enums"]["industry_vertical"] | null
+          is_active: boolean
+          name: string
+          notes: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          industry?: Database["public"]["Enums"]["industry_vertical"] | null
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          industry?: Database["public"]["Enums"]["industry_vertical"] | null
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          client_id: string
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          last_purchase_at: string | null
+          phone: string | null
+          purchase_count: number
+          source: string | null
+          tags: string[] | null
+          total_spent_cents: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          last_purchase_at?: string | null
+          phone?: string | null
+          purchase_count?: number
+          source?: string | null
+          tags?: string[] | null
+          total_spent_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          last_purchase_at?: string | null
+          phone?: string | null
+          purchase_count?: number
+          source?: string | null
+          tags?: string[] | null
+          total_spent_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_drafts: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string
+          html_sanitized: string
+          id: string
+          notes: string | null
+          preheader: string | null
+          status: Database["public"]["Enums"]["email_draft_status"]
+          subject: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by: string
+          html_sanitized: string
+          id?: string
+          notes?: string | null
+          preheader?: string | null
+          status?: Database["public"]["Enums"]["email_draft_status"]
+          subject: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          html_sanitized?: string
+          id?: string
+          notes?: string | null
+          preheader?: string | null
+          status?: Database["public"]["Enums"]["email_draft_status"]
+          subject?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_drafts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gift_card_sales: {
+        Row: {
+          amount_cents: number
+          buyer_email: string | null
+          buyer_name: string | null
+          card_code: string | null
+          client_id: string
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          recipient_email: string | null
+          recipient_name: string | null
+          redeemed_cents: number
+          sold_at: string
+          source: string | null
+          status: Database["public"]["Enums"]["gift_card_sale_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          buyer_email?: string | null
+          buyer_name?: string | null
+          card_code?: string | null
+          client_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          redeemed_cents?: number
+          sold_at: string
+          source?: string | null
+          status?: Database["public"]["Enums"]["gift_card_sale_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          buyer_email?: string | null
+          buyer_name?: string | null
+          card_code?: string | null
+          client_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          redeemed_cents?: number
+          sold_at?: string
+          source?: string | null
+          status?: Database["public"]["Enums"]["gift_card_sale_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_card_sales_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -157,6 +387,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      client_ids_for_user: { Args: { _user_id: string }; Returns: string[] }
       get_booked_slots: {
         Args: { range_end: string; range_start: string }
         Returns: {
@@ -170,6 +401,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_belongs_to_client: {
+        Args: { _client_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
@@ -179,6 +414,18 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "no_show"
+      email_draft_status:
+        | "draft"
+        | "submitted"
+        | "scheduled"
+        | "sent"
+        | "archived"
+      gift_card_sale_status:
+        | "sold"
+        | "partially_redeemed"
+        | "redeemed"
+        | "refunded"
+        | "expired"
       gift_card_status: "have_program" | "considering" | "none"
       industry_vertical:
         | "spa"
@@ -323,6 +570,20 @@ export const Constants = {
         "completed",
         "cancelled",
         "no_show",
+      ],
+      email_draft_status: [
+        "draft",
+        "submitted",
+        "scheduled",
+        "sent",
+        "archived",
+      ],
+      gift_card_sale_status: [
+        "sold",
+        "partially_redeemed",
+        "redeemed",
+        "refunded",
+        "expired",
       ],
       gift_card_status: ["have_program", "considering", "none"],
       industry_vertical: [

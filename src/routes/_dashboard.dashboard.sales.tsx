@@ -6,11 +6,15 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   DashboardShell,
   DashboardEmptyState,
+  KpiCard,
   formatCurrencyCents,
+  formatNumber,
   formatDate,
+  CHART_PALETTE,
+  HBar,
 } from '@/components/dashboard/primitives';
 import { toast } from 'sonner';
-import { Upload, Download } from 'lucide-react';
+import { Upload, Download, Package, ShoppingBag, DollarSign, TrendingUp } from 'lucide-react';
 
 export const Route = createFileRoute('/_dashboard/dashboard/sales')({
   component: SalesPage,
@@ -25,6 +29,7 @@ interface SaleRow {
   buyer_name: string | null;
   buyer_email: string | null;
   recipient_name: string | null;
+  product_name: string | null;
 }
 
 function SalesPage() {
@@ -32,6 +37,7 @@ function SalesPage() {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterProduct, setFilterProduct] = useState<string>('all');
 
   const sales = useQuery({
     queryKey: ['sales', activeClientId],
@@ -39,7 +45,7 @@ function SalesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gift_card_sales')
-        .select('id, sold_at, amount_cents, redeemed_cents, status, buyer_name, buyer_email, recipient_name')
+        .select('id, sold_at, amount_cents, redeemed_cents, status, buyer_name, buyer_email, recipient_name, product_name')
         .eq('client_id', activeClientId!)
         .order('sold_at', { ascending: false })
         .limit(500);
@@ -68,6 +74,7 @@ function SalesPage() {
         recipient_name: r.recipient_name || null,
         recipient_email: r.recipient_email || null,
         card_code: r.card_code || null,
+        product_name: r.product_name || r.product || r.bundle || null,
         source: r.source || 'csv_import',
       }));
       const { error } = await supabase.from('gift_card_sales').insert(inserts);
@@ -82,15 +89,52 @@ function SalesPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Import failed'),
   });
 
+  // KPIs computed client-side over the loaded set
+  const kpis = useMemo(() => {
+    const rows = sales.data ?? [];
+    const totalCount = rows.length;
+    const totalAmount = rows.reduce((s, r) => s + r.amount_cents, 0);
+    const avg = totalCount ? Math.round(totalAmount / totalCount) : 0;
+    const redeemed = rows.reduce((s, r) => s + r.redeemed_cents, 0);
+    return { totalCount, totalAmount, avg, redeemed };
+  }, [sales.data]);
+
+  // Top products breakdown
+  const productBreakdown = useMemo(() => {
+    const rows = sales.data ?? [];
+    const map = new Map<string, { count: number; amount: number }>();
+    for (const r of rows) {
+      const key = r.product_name?.trim() || 'Uncategorized';
+      const prev = map.get(key) ?? { count: 0, amount: 0 };
+      prev.count += 1;
+      prev.amount += r.amount_cents;
+      map.set(key, prev);
+    }
+    return Array.from(map.entries())
+      .map(([name, v]) => ({ name, ...v }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [sales.data]);
+
+  const productOptions = useMemo(
+    () => productBreakdown.map((p) => p.name),
+    [productBreakdown],
+  );
+
   const filtered = useMemo(() => {
     if (!sales.data) return [];
-    if (filterStatus === 'all') return sales.data;
-    return sales.data.filter((r) => r.status === filterStatus);
-  }, [sales.data, filterStatus]);
+    return sales.data.filter((r) => {
+      if (filterStatus !== 'all' && r.status !== filterStatus) return false;
+      if (filterProduct !== 'all') {
+        const name = r.product_name?.trim() || 'Uncategorized';
+        if (name !== filterProduct) return false;
+      }
+      return true;
+    });
+  }, [sales.data, filterStatus, filterProduct]);
 
   const exportCsv = () => {
     if (!sales.data?.length) return;
-    const header = ['sold_at', 'amount', 'redeemed', 'status', 'buyer_name', 'buyer_email', 'recipient_name'];
+    const header = ['sold_at', 'amount', 'redeemed', 'status', 'product_name', 'buyer_name', 'buyer_email', 'recipient_name'];
     const lines = [header.join(',')];
     for (const r of sales.data) {
       lines.push(
@@ -99,6 +143,7 @@ function SalesPage() {
           (r.amount_cents / 100).toFixed(2),
           (r.redeemed_cents / 100).toFixed(2),
           r.status,
+          csvEscape(r.product_name ?? ''),
           csvEscape(r.buyer_name ?? ''),
           csvEscape(r.buyer_email ?? ''),
           csvEscape(r.recipient_name ?? ''),
@@ -116,10 +161,12 @@ function SalesPage() {
     );
   }
 
+  const maxAmount = productBreakdown[0]?.amount ?? 1;
+
   return (
     <DashboardShell
       title="Sales"
-      subtitle="Every gift card sold and how much has been redeemed."
+      subtitle="Gift cards sold, revenue, and breakdown by service or bundle."
       actions={
         <>
           <input
@@ -152,7 +199,73 @@ function SalesPage() {
         </>
       }
     >
-      <div className="mb-4 flex items-center gap-3">
+      {/* KPIs */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="Cards sold"
+          value={formatNumber(kpis.totalCount)}
+          loading={sales.isLoading}
+          tone="ink"
+          icon={<ShoppingBag className="h-4 w-4" />}
+        />
+        <KpiCard
+          label="Revenue"
+          value={formatCurrencyCents(kpis.totalAmount)}
+          loading={sales.isLoading}
+          tone="emerald"
+          icon={<DollarSign className="h-4 w-4" />}
+        />
+        <KpiCard
+          label="Avg ticket"
+          value={formatCurrencyCents(kpis.avg)}
+          loading={sales.isLoading}
+          icon={<TrendingUp className="h-4 w-4" />}
+        />
+        <KpiCard
+          label="Redeemed"
+          value={formatCurrencyCents(kpis.redeemed)}
+          hint={
+            kpis.totalAmount
+              ? `${Math.round((kpis.redeemed / kpis.totalAmount) * 100)}% of issued`
+              : undefined
+          }
+          loading={sales.isLoading}
+          tone="sky"
+        />
+      </div>
+
+      {/* Product breakdown */}
+      <div className="mt-8 rounded-sm border border-hairline bg-paper p-6">
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-ink-soft" />
+            <h2 className="font-display text-[18px] text-ink">Top products & bundles</h2>
+          </div>
+          <span className="text-[12px] text-ink-muted">By revenue</span>
+        </div>
+        {sales.isLoading ? (
+          <p className="py-8 text-center text-[13px] text-ink-muted">Loading…</p>
+        ) : productBreakdown.length === 0 ? (
+          <p className="py-8 text-center text-[13px] text-ink-muted">
+            No sales yet. Import a CSV with a <code>product_name</code> column to see the breakdown.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {productBreakdown.slice(0, 7).map((p, i) => (
+              <HBar
+                key={p.name}
+                label={p.name}
+                valueText={`${formatCurrencyCents(p.amount)} · ${p.count} ${p.count === 1 ? 'card' : 'cards'}`}
+                ratio={p.amount / maxAmount}
+                color={CHART_PALETTE[i % CHART_PALETTE.length]}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Filters */}
+      <div className="mt-8 mb-4 flex flex-wrap items-center gap-3">
         <label className="text-[13px] text-ink-muted">Status</label>
         <select
           value={filterStatus}
@@ -166,6 +279,17 @@ function SalesPage() {
           <option value="refunded">Refunded</option>
           <option value="expired">Expired</option>
         </select>
+        <label className="text-[13px] text-ink-muted">Product</label>
+        <select
+          value={filterProduct}
+          onChange={(e) => setFilterProduct(e.target.value)}
+          className="rounded-sm border border-hairline-strong bg-paper px-2 h-9 text-[13px]"
+        >
+          <option value="all">All</option>
+          {productOptions.map((p) => (
+            <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
         <p className="text-[13px] text-ink-muted">{filtered.length} rows</p>
       </div>
 
@@ -174,11 +298,11 @@ function SalesPage() {
           <thead className="border-b border-hairline bg-paper-soft text-left text-[12px] uppercase tracking-wide text-ink-muted">
             <tr>
               <th className="px-4 py-3 font-medium">Sold</th>
+              <th className="px-4 py-3 font-medium">Product</th>
               <th className="px-4 py-3 font-medium">Amount</th>
               <th className="px-4 py-3 font-medium">Redeemed</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Buyer</th>
-              <th className="px-4 py-3 font-medium">Recipient</th>
             </tr>
           </thead>
           <tbody>
@@ -198,6 +322,7 @@ function SalesPage() {
               filtered.map((r) => (
                 <tr key={r.id} className="border-b border-hairline last:border-0">
                   <td className="px-4 py-3 whitespace-nowrap text-ink-soft">{formatDate(r.sold_at)}</td>
+                  <td className="px-4 py-3 text-ink">{r.product_name || <span className="text-ink-muted italic">Uncategorized</span>}</td>
                   <td className="px-4 py-3 font-medium text-ink">{formatCurrencyCents(r.amount_cents)}</td>
                   <td className="px-4 py-3 text-ink-soft">{formatCurrencyCents(r.redeemed_cents)}</td>
                   <td className="px-4 py-3">
@@ -208,7 +333,6 @@ function SalesPage() {
                   <td className="px-4 py-3 text-ink-soft">
                     {r.buyer_name || r.buyer_email || '—'}
                   </td>
-                  <td className="px-4 py-3 text-ink-soft">{r.recipient_name || '—'}</td>
                 </tr>
               ))
             )}
@@ -217,7 +341,7 @@ function SalesPage() {
       </div>
 
       <p className="mt-4 text-[12px] text-ink-muted">
-        CSV columns: <code>sold_at, amount, redeemed, status, buyer_name, buyer_email, recipient_name, recipient_email, card_code, source</code>
+        CSV columns: <code>sold_at, amount, redeemed, status, product_name, buyer_name, buyer_email, recipient_name, recipient_email, card_code, source</code>
       </p>
     </DashboardShell>
   );

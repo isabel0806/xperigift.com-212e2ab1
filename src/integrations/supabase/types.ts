@@ -201,8 +201,11 @@ export type Database = {
           client_id: string
           created_at: string
           email: string
+          first_name: string | null
           full_name: string | null
           id: string
+          last_contact_at: string | null
+          last_name: string | null
           last_purchase_at: string | null
           loyalty_points: number
           phone: string | null
@@ -216,8 +219,11 @@ export type Database = {
           client_id: string
           created_at?: string
           email: string
+          first_name?: string | null
           full_name?: string | null
           id?: string
+          last_contact_at?: string | null
+          last_name?: string | null
           last_purchase_at?: string | null
           loyalty_points?: number
           phone?: string | null
@@ -231,8 +237,11 @@ export type Database = {
           client_id?: string
           created_at?: string
           email?: string
+          first_name?: string | null
           full_name?: string | null
           id?: string
+          last_contact_at?: string | null
+          last_name?: string | null
           last_purchase_at?: string | null
           loyalty_points?: number
           phone?: string | null
@@ -254,6 +263,9 @@ export type Database = {
       }
       email_drafts: {
         Row: {
+          approval_status: Database["public"]["Enums"]["email_approval_status"]
+          approved_at: string | null
+          approved_by: string | null
           client_id: string
           created_at: string
           created_by: string
@@ -261,12 +273,18 @@ export type Database = {
           id: string
           notes: string | null
           preheader: string | null
+          recipient_customer_ids: string[] | null
+          send_at: string | null
+          send_to_all: boolean
           status: Database["public"]["Enums"]["email_draft_status"]
           subject: string
           submitted_at: string | null
           updated_at: string
         }
         Insert: {
+          approval_status?: Database["public"]["Enums"]["email_approval_status"]
+          approved_at?: string | null
+          approved_by?: string | null
           client_id: string
           created_at?: string
           created_by: string
@@ -274,12 +292,18 @@ export type Database = {
           id?: string
           notes?: string | null
           preheader?: string | null
+          recipient_customer_ids?: string[] | null
+          send_at?: string | null
+          send_to_all?: boolean
           status?: Database["public"]["Enums"]["email_draft_status"]
           subject: string
           submitted_at?: string | null
           updated_at?: string
         }
         Update: {
+          approval_status?: Database["public"]["Enums"]["email_approval_status"]
+          approved_at?: string | null
+          approved_by?: string | null
           client_id?: string
           created_at?: string
           created_by?: string
@@ -287,6 +311,9 @@ export type Database = {
           id?: string
           notes?: string | null
           preheader?: string | null
+          recipient_customer_ids?: string[] | null
+          send_at?: string | null
+          send_to_all?: boolean
           status?: Database["public"]["Enums"]["email_draft_status"]
           subject?: string
           submitted_at?: string | null
@@ -313,6 +340,7 @@ export type Database = {
           currency: string
           id: string
           notes: string | null
+          product_name: string | null
           recipient_email: string | null
           recipient_name: string | null
           redeemed_cents: number
@@ -331,6 +359,7 @@ export type Database = {
           currency?: string
           id?: string
           notes?: string | null
+          product_name?: string | null
           recipient_email?: string | null
           recipient_name?: string | null
           redeemed_cents?: number
@@ -349,6 +378,7 @@ export type Database = {
           currency?: string
           id?: string
           notes?: string | null
+          product_name?: string | null
           recipient_email?: string | null
           recipient_name?: string | null
           redeemed_cents?: number
@@ -478,6 +508,12 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "no_show"
+      email_approval_status:
+        | "pending_approval"
+        | "approved"
+        | "rejected"
+        | "sent"
+        | "cancelled"
       email_draft_status:
         | "draft"
         | "submitted"
@@ -635,6 +671,13 @@ export const Constants = {
         "completed",
         "cancelled",
         "no_show",
+      ],
+      email_approval_status: [
+        "pending_approval",
+        "approved",
+        "rejected",
+        "sent",
+        "cancelled",
       ],
       email_draft_status: [
         "draft",

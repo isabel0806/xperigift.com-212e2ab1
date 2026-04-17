@@ -15,8 +15,8 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-hairline bg-paper/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-5 sm:px-8">
         <Link to="/" className="flex items-center gap-2 group" onClick={() => setOpen(false)}>
-          <span className="font-display text-[22px] font-semibold tracking-tight text-ink leading-none">
-            Xperigift
+          <span className="font-display text-[22px] font-semibold tracking-tight text-ink leading-none lowercase">
+            xperigift
           </span>
           <span className="hidden sm:inline-block h-1.5 w-1.5 rounded-full bg-emerald" aria-hidden />
         </Link>

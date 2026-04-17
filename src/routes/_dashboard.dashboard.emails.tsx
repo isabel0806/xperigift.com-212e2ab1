@@ -248,6 +248,34 @@ function CampaignCalendar({
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const todayKey = toDayKey(new Date());
 
+  const monthStart = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const monthEnd = toDayKey(new Date(year, month + 1, 0));
+
+  const holidays = useQuery({
+    queryKey: ['marketing-holidays', monthStart, monthEnd],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('marketing_holidays')
+        .select('id, name, holiday_date, emoji, category')
+        .eq('is_active', true)
+        .gte('holiday_date', monthStart)
+        .lte('holiday_date', monthEnd)
+        .order('holiday_date');
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const holidaysByDay = useMemo(() => {
+    const map = new Map<string, typeof holidays.data>();
+    for (const h of holidays.data ?? []) {
+      const list = map.get(h.holiday_date) ?? [];
+      list.push(h);
+      map.set(h.holiday_date, list);
+    }
+    return map;
+  }, [holidays.data]);
+
   const byDay = useMemo(() => {
     const map = new Map<string, Draft[]>();
     for (const d of drafts) {

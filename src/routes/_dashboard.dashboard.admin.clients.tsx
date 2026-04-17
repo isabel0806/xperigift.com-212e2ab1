@@ -263,7 +263,7 @@ function ClientRow({
         <div>
           <p className="font-medium text-ink">{client.name}</p>
           <p className="text-[12px] text-ink-muted">
-            {client.industry || 'No industry'} · created {formatDate(client.created_at)}
+            {client.industry || 'No industry'} · {client.points_per_giftcard} pts/gift card · created {formatDate(client.created_at)}
           </p>
         </div>
         <button
@@ -271,7 +271,7 @@ function ClientRow({
           className="inline-flex h-9 items-center gap-2 rounded-sm border border-hairline-strong bg-paper px-3 text-[13px] text-ink hover:bg-paper-soft"
         >
           <UserPlus className="h-4 w-4" />
-          {expanded ? 'Hide' : 'Manage users'}
+          {expanded ? 'Hide' : 'Manage'}
         </button>
       </div>
       {expanded && (
@@ -298,6 +298,32 @@ function ClientRow({
             >
               {invite.isPending ? 'Inviting…' : 'Invite'}
             </button>
+          </div>
+
+          <div className="mt-5 rounded-sm border border-hairline bg-paper p-4">
+            <p className="text-[12px] uppercase tracking-[0.14em] text-ink-muted">Loyalty program</p>
+            <div className="mt-2 flex items-end gap-3">
+              <div>
+                <label className="block text-[12px] text-ink-muted">Points awarded per gift card sold</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={pointsDraft}
+                  onChange={(e) => setPointsDraft(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="mt-1 w-32 rounded-sm border border-hairline-strong bg-paper px-3 h-9 text-[14px]"
+                />
+              </div>
+              <button
+                onClick={() => onUpdatePoints(pointsDraft)}
+                disabled={isSavingPoints || pointsDraft === client.points_per_giftcard}
+                className="inline-flex h-9 items-center rounded-sm bg-ink px-3 text-[13px] text-paper hover:bg-ink-soft disabled:opacity-60"
+              >
+                {isSavingPoints ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+            <p className="mt-2 text-[12px] text-ink-muted">
+              Awarded automatically to the buyer when a sale is recorded with their email.
+            </p>
           </div>
 
           <div className="mt-5">

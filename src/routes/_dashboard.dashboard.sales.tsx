@@ -14,7 +14,8 @@ import {
   HBar,
 } from '@/components/dashboard/primitives';
 import { toast } from 'sonner';
-import { Upload, Download, Package, ShoppingBag, DollarSign, TrendingUp } from 'lucide-react';
+import { Upload, Download, Package, ShoppingBag, DollarSign, TrendingUp, LineChart as LineChartIcon } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export const Route = createFileRoute('/_dashboard/dashboard/sales')({
   component: SalesPage,
@@ -113,6 +114,37 @@ function SalesPage() {
     return Array.from(map.entries())
       .map(([name, v]) => ({ name, ...v }))
       .sort((a, b) => b.amount - a.amount);
+  }, [sales.data]);
+
+  // Monthly trend (last 12 months, oldest -> newest)
+  const monthlyTrend = useMemo(() => {
+    const rows = sales.data ?? [];
+    const buckets = new Map<string, { revenue: number; count: number }>();
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      buckets.set(key, { revenue: 0, count: 0 });
+    }
+    for (const r of rows) {
+      const d = new Date(r.sold_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const b = buckets.get(key);
+      if (!b) continue;
+      b.revenue += r.amount_cents;
+      b.count += 1;
+    }
+    return Array.from(buckets.entries()).map(([key, v]) => {
+      const [y, m] = key.split('-');
+      const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString(undefined, {
+        month: 'short',
+      });
+      return {
+        month: label,
+        revenue: Math.round(v.revenue / 100),
+        count: v.count,
+      };
+    });
   }, [sales.data]);
 
   const productOptions = useMemo(
@@ -232,6 +264,71 @@ function SalesPage() {
           loading={sales.isLoading}
           tone="sky"
         />
+      </div>
+
+      {/* Monthly trend */}
+      <div className="mt-8 rounded-sm border border-hairline bg-paper p-6">
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <LineChartIcon className="h-4 w-4 text-ink-soft" />
+            <h2 className="font-display text-[18px] text-ink">Revenue trend</h2>
+          </div>
+          <span className="text-[12px] text-ink-muted">Last 12 months</span>
+        </div>
+        {sales.isLoading ? (
+          <p className="py-8 text-center text-[13px] text-ink-muted">Loading…</p>
+        ) : (sales.data?.length ?? 0) === 0 ? (
+          <p className="py-8 text-center text-[13px] text-ink-muted">
+            No sales yet. Import a CSV to see month-over-month evolution.
+          </p>
+        ) : (
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={monthlyTrend} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={CHART_PALETTE[0]} stopOpacity={0.35} />
+                    <stop offset="95%" stopColor={CHART_PALETTE[0]} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.9 0.01 90)" vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 12, fill: 'oklch(0.5 0.02 90)' }}
+                  tickLine={false}
+                  axisLine={{ stroke: 'oklch(0.88 0.01 90)' }}
+                />
+                <YAxis
+                  tick={{ fontSize: 12, fill: 'oklch(0.5 0.02 90)' }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v: number) => `$${formatNumber(v)}`}
+                  width={70}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: 'oklch(0.99 0.005 90)',
+                    border: '1px solid oklch(0.88 0.01 90)',
+                    borderRadius: 4,
+                    fontSize: 12,
+                  }}
+                  formatter={(value: number, name: string) =>
+                    name === 'revenue'
+                      ? [`$${formatNumber(value)}`, 'Revenue']
+                      : [formatNumber(value), 'Cards']
+                  }
+                />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke={CHART_PALETTE[0]}
+                  strokeWidth={2}
+                  fill="url(#revGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       {/* Product breakdown */}

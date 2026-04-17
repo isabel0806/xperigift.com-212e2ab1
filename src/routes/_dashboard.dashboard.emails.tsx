@@ -427,6 +427,17 @@ function calendarItemClass(status: ApprovalStatus): string {
   }
 }
 
+function holidayPillClass(category: string): string {
+  switch (category) {
+    case 'federal':
+      return 'bg-[oklch(0.94_0.05_250)] text-[oklch(0.32_0.13_250)]';
+    case 'retail':
+      return 'bg-[oklch(0.94_0.06_300)] text-[oklch(0.32_0.16_300)]';
+    default:
+      return 'bg-paper-soft text-ink-soft';
+  }
+}
+
 function toDayKey(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');

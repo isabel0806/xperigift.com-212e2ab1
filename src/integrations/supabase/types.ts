@@ -168,6 +168,7 @@ export type Database = {
           is_active: boolean
           name: string
           notes: string | null
+          points_per_giftcard: number
           updated_at: string
           website: string | null
         }
@@ -178,6 +179,7 @@ export type Database = {
           is_active?: boolean
           name: string
           notes?: string | null
+          points_per_giftcard?: number
           updated_at?: string
           website?: string | null
         }
@@ -188,6 +190,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           notes?: string | null
+          points_per_giftcard?: number
           updated_at?: string
           website?: string | null
         }
@@ -201,6 +204,7 @@ export type Database = {
           full_name: string | null
           id: string
           last_purchase_at: string | null
+          loyalty_points: number
           phone: string | null
           purchase_count: number
           source: string | null
@@ -215,6 +219,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           last_purchase_at?: string | null
+          loyalty_points?: number
           phone?: string | null
           purchase_count?: number
           source?: string | null
@@ -229,6 +234,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           last_purchase_at?: string | null
+          loyalty_points?: number
           phone?: string | null
           purchase_count?: number
           source?: string | null
@@ -361,6 +367,64 @@ export type Database = {
           },
         ]
       }
+      loyalty_transactions: {
+        Row: {
+          balance_after: number
+          client_id: string
+          created_at: string
+          customer_id: string
+          gift_card_sale_id: string | null
+          id: string
+          note: string | null
+          points: number
+          type: Database["public"]["Enums"]["loyalty_txn_type"]
+        }
+        Insert: {
+          balance_after: number
+          client_id: string
+          created_at?: string
+          customer_id: string
+          gift_card_sale_id?: string | null
+          id?: string
+          note?: string | null
+          points: number
+          type: Database["public"]["Enums"]["loyalty_txn_type"]
+        }
+        Update: {
+          balance_after?: number
+          client_id?: string
+          created_at?: string
+          customer_id?: string
+          gift_card_sale_id?: string | null
+          id?: string
+          note?: string | null
+          points?: number
+          type?: Database["public"]["Enums"]["loyalty_txn_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_transactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_transactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_transactions_gift_card_sale_id_fkey"
+            columns: ["gift_card_sale_id"]
+            isOneToOne: false
+            referencedRelation: "gift_card_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -435,6 +499,7 @@ export type Database = {
         | "specialty_retail"
         | "gun_shop"
         | "other"
+      loyalty_txn_type: "earned" | "redeemed" | "adjustment" | "expired"
       revenue_band: "under_150k" | "150k_500k" | "500k_1m" | "1m_2m" | "over_2m"
     }
     CompositeTypes: {
@@ -595,6 +660,7 @@ export const Constants = {
         "gun_shop",
         "other",
       ],
+      loyalty_txn_type: ["earned", "redeemed", "adjustment", "expired"],
       revenue_band: ["under_150k", "150k_500k", "500k_1m", "1m_2m", "over_2m"],
     },
   },

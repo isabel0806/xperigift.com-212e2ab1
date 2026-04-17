@@ -14,7 +14,8 @@ import {
   HBar,
 } from '@/components/dashboard/primitives';
 import { toast } from 'sonner';
-import { Upload, Download, Package, ShoppingBag, DollarSign, TrendingUp } from 'lucide-react';
+import { Upload, Download, Package, ShoppingBag, DollarSign, TrendingUp, LineChart as LineChartIcon } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export const Route = createFileRoute('/_dashboard/dashboard/sales')({
   component: SalesPage,

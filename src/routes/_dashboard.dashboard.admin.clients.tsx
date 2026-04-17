@@ -156,6 +156,17 @@ function AdminClientsPage() {
               />
             </div>
             <div className="sm:col-span-2">
+              <label className="block text-[13px] font-medium text-ink">Loyalty points per gift card sold</label>
+              <input
+                type="number"
+                min={0}
+                value={form.points_per_giftcard}
+                onChange={(e) => setForm({ ...form, points_per_giftcard: Math.max(0, parseInt(e.target.value) || 0) })}
+                className="mt-2 w-full sm:w-40 rounded-sm border border-hairline-strong bg-paper px-3 h-10 text-[14px]"
+              />
+              <p className="mt-1 text-[12px] text-ink-muted">Awarded automatically to the buyer when a sale is recorded.</p>
+            </div>
+            <div className="sm:col-span-2">
               <label className="block text-[13px] font-medium text-ink">Notes</label>
               <textarea
                 value={form.notes}

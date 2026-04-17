@@ -329,6 +329,57 @@ export type Database = {
           },
         ]
       }
+      gift_card_redemptions: {
+        Row: {
+          amount_cents: number
+          card_code_snapshot: string | null
+          client_id: string
+          created_at: string
+          gift_card_sale_id: string
+          id: string
+          note: string | null
+          redeemed_at: string
+          redeemed_by: string | null
+        }
+        Insert: {
+          amount_cents: number
+          card_code_snapshot?: string | null
+          client_id: string
+          created_at?: string
+          gift_card_sale_id: string
+          id?: string
+          note?: string | null
+          redeemed_at?: string
+          redeemed_by?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          card_code_snapshot?: string | null
+          client_id?: string
+          created_at?: string
+          gift_card_sale_id?: string
+          id?: string
+          note?: string | null
+          redeemed_at?: string
+          redeemed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_card_redemptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gift_card_redemptions_gift_card_sale_id_fkey"
+            columns: ["gift_card_sale_id"]
+            isOneToOne: false
+            referencedRelation: "gift_card_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gift_card_sales: {
         Row: {
           amount_cents: number

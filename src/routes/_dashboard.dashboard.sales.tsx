@@ -14,8 +14,9 @@ import {
   HBar,
 } from '@/components/dashboard/primitives';
 import { toast } from 'sonner';
-import { Upload, Download, Package, ShoppingBag, DollarSign, TrendingUp, LineChart as LineChartIcon } from 'lucide-react';
+import { Upload, Download, Package, ShoppingBag, DollarSign, TrendingUp, LineChart as LineChartIcon, ScanLine } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { RedeemDialog, type RedeemSale } from '@/components/redeem-dialog';
 
 export const Route = createFileRoute('/_dashboard/dashboard/sales')({
   component: SalesPage,
@@ -23,6 +24,8 @@ export const Route = createFileRoute('/_dashboard/dashboard/sales')({
 
 interface SaleRow {
   id: string;
+  client_id: string;
+  card_code: string | null;
   sold_at: string;
   amount_cents: number;
   redeemed_cents: number;
@@ -39,6 +42,7 @@ function SalesPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterProduct, setFilterProduct] = useState<string>('all');
+  const [redeemSale, setRedeemSale] = useState<RedeemSale | null>(null);
 
   const sales = useQuery({
     queryKey: ['sales', activeClientId],
@@ -46,7 +50,7 @@ function SalesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gift_card_sales')
-        .select('id, sold_at, amount_cents, redeemed_cents, status, buyer_name, buyer_email, recipient_name, product_name')
+        .select('id, client_id, card_code, sold_at, amount_cents, redeemed_cents, status, buyer_name, buyer_email, recipient_name, product_name')
         .eq('client_id', activeClientId!)
         .order('sold_at', { ascending: false })
         .limit(500);
@@ -400,38 +404,53 @@ function SalesPage() {
               <th className="px-4 py-3 font-medium">Redeemed</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Buyer</th>
+              <th className="px-4 py-3 font-medium text-right">Action</th>
             </tr>
           </thead>
           <tbody>
             {sales.isLoading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-ink-muted">
+                <td colSpan={7} className="px-4 py-8 text-center text-ink-muted">
                   Loading…
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-ink-muted">
+                <td colSpan={7} className="px-4 py-12 text-center text-ink-muted">
                   No sales yet. Import a CSV to get started.
                 </td>
               </tr>
             ) : (
-              filtered.map((r) => (
-                <tr key={r.id} className="border-b border-hairline last:border-0">
-                  <td className="px-4 py-3 whitespace-nowrap text-ink-soft">{formatDate(r.sold_at)}</td>
-                  <td className="px-4 py-3 text-ink">{r.product_name || <span className="text-ink-muted italic">Uncategorized</span>}</td>
-                  <td className="px-4 py-3 font-medium text-ink">{formatCurrencyCents(r.amount_cents)}</td>
-                  <td className="px-4 py-3 text-ink-soft">{formatCurrencyCents(r.redeemed_cents)}</td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex h-6 items-center rounded-sm bg-paper-soft px-2 text-[12px] text-ink-soft">
-                      {r.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-ink-soft">
-                    {r.buyer_name || r.buyer_email || '—'}
-                  </td>
-                </tr>
-              ))
+              filtered.map((r) => {
+                const remaining = r.amount_cents - r.redeemed_cents;
+                const canRedeem = remaining > 0 && r.status !== 'refunded' && r.status !== 'expired';
+                return (
+                  <tr key={r.id} className="border-b border-hairline last:border-0">
+                    <td className="px-4 py-3 whitespace-nowrap text-ink-soft">{formatDate(r.sold_at)}</td>
+                    <td className="px-4 py-3 text-ink">{r.product_name || <span className="text-ink-muted italic">Uncategorized</span>}</td>
+                    <td className="px-4 py-3 font-medium text-ink">{formatCurrencyCents(r.amount_cents)}</td>
+                    <td className="px-4 py-3 text-ink-soft">{formatCurrencyCents(r.redeemed_cents)}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex h-6 items-center rounded-sm bg-paper-soft px-2 text-[12px] text-ink-soft">
+                        {r.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-ink-soft">
+                      {r.buyer_name || r.buyer_email || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => setRedeemSale(r)}
+                        disabled={!canRedeem}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-hairline-strong bg-paper px-2.5 text-[12px] text-ink hover:bg-paper-soft disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <ScanLine className="h-3.5 w-3.5" />
+                        Redeem
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -440,6 +459,12 @@ function SalesPage() {
       <p className="mt-4 text-[12px] text-ink-muted">
         CSV columns: <code>sold_at, amount, redeemed, status, product_name, buyer_name, buyer_email, recipient_name, recipient_email, card_code, source</code>
       </p>
+
+      <RedeemDialog
+        sale={redeemSale}
+        open={!!redeemSale}
+        onClose={() => setRedeemSale(null)}
+      />
     </DashboardShell>
   );
 }

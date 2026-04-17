@@ -13,6 +13,7 @@ import { sanitizeEmailHtml } from '@/lib/sanitize-html';
 import { toast } from 'sonner';
 import {
   Plus, Save, Send, Trash2, CheckCircle2, Clock, XCircle, Users, Search,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 
 export const Route = createFileRoute('/_dashboard/dashboard/emails')({

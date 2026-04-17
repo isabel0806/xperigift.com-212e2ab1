@@ -142,6 +142,10 @@ function EmailsPage() {
         </div>
       )}
 
+      <div className="mb-5">
+        <CampaignCalendar drafts={drafts.data ?? []} onSelectDraft={(d) => setEditing(d)} />
+      </div>
+
       <div className="overflow-hidden rounded-sm border border-hairline bg-paper">
         <table className="w-full text-[14px]">
           <thead className="border-b border-hairline bg-paper-soft text-left text-[12px] uppercase tracking-wide text-ink-muted">

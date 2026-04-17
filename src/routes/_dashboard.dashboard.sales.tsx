@@ -459,6 +459,12 @@ function SalesPage() {
       <p className="mt-4 text-[12px] text-ink-muted">
         CSV columns: <code>sold_at, amount, redeemed, status, product_name, buyer_name, buyer_email, recipient_name, recipient_email, card_code, source</code>
       </p>
+
+      <RedeemDialog
+        sale={redeemSale}
+        open={!!redeemSale}
+        onClose={() => setRedeemSale(null)}
+      />
     </DashboardShell>
   );
 }

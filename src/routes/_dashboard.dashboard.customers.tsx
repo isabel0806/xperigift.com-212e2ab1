@@ -25,9 +25,9 @@ function CustomersPage() {
     queryFn: async () => {
       let q = supabase
         .from('customers')
-        .select('id, email, full_name, phone, total_spent_cents, purchase_count, last_purchase_at')
+        .select('id, email, full_name, phone, total_spent_cents, purchase_count, last_purchase_at, loyalty_points')
         .eq('client_id', activeClientId!)
-        .order('last_purchase_at', { ascending: false, nullsFirst: false })
+        .order('loyalty_points', { ascending: false })
         .limit(500);
       if (search.trim()) {
         const term = `%${search.trim()}%`;

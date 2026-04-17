@@ -76,6 +76,14 @@ export function SiteHeader() {
               </Link>
             ))}
             <Link
+              to="/login"
+              className="rounded-sm px-3 py-3 text-[15px] text-ink-soft hover:bg-paper-soft"
+              activeProps={{ className: 'text-ink font-medium' }}
+              onClick={() => setOpen(false)}
+            >
+              Client sign in
+            </Link>
+            <Link
               to="/book-audit"
               className="mt-2 inline-flex h-11 items-center justify-center rounded-sm bg-ink px-5 text-[14px] font-medium text-paper"
               onClick={() => setOpen(false)}

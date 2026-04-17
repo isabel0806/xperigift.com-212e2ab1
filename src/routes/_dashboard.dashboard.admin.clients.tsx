@@ -214,14 +214,19 @@ function ClientRow({
   client,
   expanded,
   onToggle,
+  onUpdatePoints,
+  isSavingPoints,
 }: {
-  client: { id: string; name: string; industry: string | null; website: string | null; is_active: boolean; created_at: string };
+  client: { id: string; name: string; industry: string | null; website: string | null; is_active: boolean; created_at: string; points_per_giftcard: number };
   expanded: boolean;
   onToggle: () => void;
+  onUpdatePoints: (points: number) => void;
+  isSavingPoints: boolean;
 }) {
   const qc = useQueryClient();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [pointsDraft, setPointsDraft] = useState<number>(client.points_per_giftcard);
 
   const members = useQuery({
     queryKey: ['client-members', client.id],

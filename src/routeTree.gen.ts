@@ -9,12 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndustriesRouteImport } from './routes/industries'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as BookAuditRouteImport } from './routes/book-audit'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardDashboardRouteImport } from './routes/_dashboard.dashboard'
+import { Route as DashboardDashboardSalesRouteImport } from './routes/_dashboard.dashboard.sales'
+import { Route as DashboardDashboardEmailsRouteImport } from './routes/_dashboard.dashboard.emails'
+import { Route as DashboardDashboardCustomersRouteImport } from './routes/_dashboard.dashboard.customers'
+import { Route as DashboardDashboardAdminClientsRouteImport } from './routes/_dashboard.dashboard.admin.clients'
+import { Route as DashboardDashboardAdminBookingsRouteImport } from './routes/_dashboard.dashboard.admin.bookings'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndustriesRoute = IndustriesRouteImport.update({
   id: '/industries',
   path: '/industries',
@@ -35,11 +48,49 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/_dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardDashboardRoute = DashboardDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardDashboardSalesRoute = DashboardDashboardSalesRouteImport.update({
+  id: '/sales',
+  path: '/sales',
+  getParentRoute: () => DashboardDashboardRoute,
+} as any)
+const DashboardDashboardEmailsRoute =
+  DashboardDashboardEmailsRouteImport.update({
+    id: '/emails',
+    path: '/emails',
+    getParentRoute: () => DashboardDashboardRoute,
+  } as any)
+const DashboardDashboardCustomersRoute =
+  DashboardDashboardCustomersRouteImport.update({
+    id: '/customers',
+    path: '/customers',
+    getParentRoute: () => DashboardDashboardRoute,
+  } as any)
+const DashboardDashboardAdminClientsRoute =
+  DashboardDashboardAdminClientsRouteImport.update({
+    id: '/admin/clients',
+    path: '/admin/clients',
+    getParentRoute: () => DashboardDashboardRoute,
+  } as any)
+const DashboardDashboardAdminBookingsRoute =
+  DashboardDashboardAdminBookingsRouteImport.update({
+    id: '/admin/bookings',
+    path: '/admin/bookings',
+    getParentRoute: () => DashboardDashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +98,13 @@ export interface FileRoutesByFullPath {
   '/book-audit': typeof BookAuditRoute
   '/how-it-works': typeof HowItWorksRoute
   '/industries': typeof IndustriesRoute
+  '/login': typeof LoginRoute
+  '/dashboard': typeof DashboardDashboardRouteWithChildren
+  '/dashboard/customers': typeof DashboardDashboardCustomersRoute
+  '/dashboard/emails': typeof DashboardDashboardEmailsRoute
+  '/dashboard/sales': typeof DashboardDashboardSalesRoute
+  '/dashboard/admin/bookings': typeof DashboardDashboardAdminBookingsRoute
+  '/dashboard/admin/clients': typeof DashboardDashboardAdminClientsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,39 +112,95 @@ export interface FileRoutesByTo {
   '/book-audit': typeof BookAuditRoute
   '/how-it-works': typeof HowItWorksRoute
   '/industries': typeof IndustriesRoute
+  '/login': typeof LoginRoute
+  '/dashboard': typeof DashboardDashboardRouteWithChildren
+  '/dashboard/customers': typeof DashboardDashboardCustomersRoute
+  '/dashboard/emails': typeof DashboardDashboardEmailsRoute
+  '/dashboard/sales': typeof DashboardDashboardSalesRoute
+  '/dashboard/admin/bookings': typeof DashboardDashboardAdminBookingsRoute
+  '/dashboard/admin/clients': typeof DashboardDashboardAdminClientsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_dashboard': typeof DashboardRouteWithChildren
   '/about': typeof AboutRoute
   '/book-audit': typeof BookAuditRoute
   '/how-it-works': typeof HowItWorksRoute
   '/industries': typeof IndustriesRoute
+  '/login': typeof LoginRoute
+  '/_dashboard/dashboard': typeof DashboardDashboardRouteWithChildren
+  '/_dashboard/dashboard/customers': typeof DashboardDashboardCustomersRoute
+  '/_dashboard/dashboard/emails': typeof DashboardDashboardEmailsRoute
+  '/_dashboard/dashboard/sales': typeof DashboardDashboardSalesRoute
+  '/_dashboard/dashboard/admin/bookings': typeof DashboardDashboardAdminBookingsRoute
+  '/_dashboard/dashboard/admin/clients': typeof DashboardDashboardAdminClientsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/book-audit' | '/how-it-works' | '/industries'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/book-audit' | '/how-it-works' | '/industries'
-  id:
-    | '__root__'
+  fullPaths:
     | '/'
     | '/about'
     | '/book-audit'
     | '/how-it-works'
     | '/industries'
+    | '/login'
+    | '/dashboard'
+    | '/dashboard/customers'
+    | '/dashboard/emails'
+    | '/dashboard/sales'
+    | '/dashboard/admin/bookings'
+    | '/dashboard/admin/clients'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/about'
+    | '/book-audit'
+    | '/how-it-works'
+    | '/industries'
+    | '/login'
+    | '/dashboard'
+    | '/dashboard/customers'
+    | '/dashboard/emails'
+    | '/dashboard/sales'
+    | '/dashboard/admin/bookings'
+    | '/dashboard/admin/clients'
+  id:
+    | '__root__'
+    | '/'
+    | '/_dashboard'
+    | '/about'
+    | '/book-audit'
+    | '/how-it-works'
+    | '/industries'
+    | '/login'
+    | '/_dashboard/dashboard'
+    | '/_dashboard/dashboard/customers'
+    | '/_dashboard/dashboard/emails'
+    | '/_dashboard/dashboard/sales'
+    | '/_dashboard/dashboard/admin/bookings'
+    | '/_dashboard/dashboard/admin/clients'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
   AboutRoute: typeof AboutRoute
   BookAuditRoute: typeof BookAuditRoute
   HowItWorksRoute: typeof HowItWorksRoute
   IndustriesRoute: typeof IndustriesRoute
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/industries': {
       id: '/industries'
       path: '/industries'
@@ -115,6 +229,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_dashboard': {
+      id: '/_dashboard'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -122,15 +243,90 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_dashboard/dashboard': {
+      id: '/_dashboard/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardDashboardRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/dashboard/sales': {
+      id: '/_dashboard/dashboard/sales'
+      path: '/sales'
+      fullPath: '/dashboard/sales'
+      preLoaderRoute: typeof DashboardDashboardSalesRouteImport
+      parentRoute: typeof DashboardDashboardRoute
+    }
+    '/_dashboard/dashboard/emails': {
+      id: '/_dashboard/dashboard/emails'
+      path: '/emails'
+      fullPath: '/dashboard/emails'
+      preLoaderRoute: typeof DashboardDashboardEmailsRouteImport
+      parentRoute: typeof DashboardDashboardRoute
+    }
+    '/_dashboard/dashboard/customers': {
+      id: '/_dashboard/dashboard/customers'
+      path: '/customers'
+      fullPath: '/dashboard/customers'
+      preLoaderRoute: typeof DashboardDashboardCustomersRouteImport
+      parentRoute: typeof DashboardDashboardRoute
+    }
+    '/_dashboard/dashboard/admin/clients': {
+      id: '/_dashboard/dashboard/admin/clients'
+      path: '/admin/clients'
+      fullPath: '/dashboard/admin/clients'
+      preLoaderRoute: typeof DashboardDashboardAdminClientsRouteImport
+      parentRoute: typeof DashboardDashboardRoute
+    }
+    '/_dashboard/dashboard/admin/bookings': {
+      id: '/_dashboard/dashboard/admin/bookings'
+      path: '/admin/bookings'
+      fullPath: '/dashboard/admin/bookings'
+      preLoaderRoute: typeof DashboardDashboardAdminBookingsRouteImport
+      parentRoute: typeof DashboardDashboardRoute
+    }
   }
 }
 
+interface DashboardDashboardRouteChildren {
+  DashboardDashboardCustomersRoute: typeof DashboardDashboardCustomersRoute
+  DashboardDashboardEmailsRoute: typeof DashboardDashboardEmailsRoute
+  DashboardDashboardSalesRoute: typeof DashboardDashboardSalesRoute
+  DashboardDashboardAdminBookingsRoute: typeof DashboardDashboardAdminBookingsRoute
+  DashboardDashboardAdminClientsRoute: typeof DashboardDashboardAdminClientsRoute
+}
+
+const DashboardDashboardRouteChildren: DashboardDashboardRouteChildren = {
+  DashboardDashboardCustomersRoute: DashboardDashboardCustomersRoute,
+  DashboardDashboardEmailsRoute: DashboardDashboardEmailsRoute,
+  DashboardDashboardSalesRoute: DashboardDashboardSalesRoute,
+  DashboardDashboardAdminBookingsRoute: DashboardDashboardAdminBookingsRoute,
+  DashboardDashboardAdminClientsRoute: DashboardDashboardAdminClientsRoute,
+}
+
+const DashboardDashboardRouteWithChildren =
+  DashboardDashboardRoute._addFileChildren(DashboardDashboardRouteChildren)
+
+interface DashboardRouteChildren {
+  DashboardDashboardRoute: typeof DashboardDashboardRouteWithChildren
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardDashboardRoute: DashboardDashboardRouteWithChildren,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRouteWithChildren,
   AboutRoute: AboutRoute,
   BookAuditRoute: BookAuditRoute,
   HowItWorksRoute: HowItWorksRoute,
   IndustriesRoute: IndustriesRoute,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

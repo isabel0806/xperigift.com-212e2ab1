@@ -13,6 +13,7 @@ import { sanitizeEmailHtml } from '@/lib/sanitize-html';
 import { toast } from 'sonner';
 import {
   Plus, Save, Send, Trash2, CheckCircle2, Clock, XCircle, Users, Search,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 
 export const Route = createFileRoute('/_dashboard/dashboard/emails')({
@@ -141,6 +142,10 @@ function EmailsPage() {
         </div>
       )}
 
+      <div className="mb-5">
+        <CampaignCalendar drafts={drafts.data ?? []} onSelectDraft={(d) => setEditing(d)} />
+      </div>
+
       <div className="overflow-hidden rounded-sm border border-hairline bg-paper">
         <table className="w-full text-[14px]">
           <thead className="border-b border-hairline bg-paper-soft text-left text-[12px] uppercase tracking-wide text-ink-muted">
@@ -221,6 +226,163 @@ function EmailsPage() {
       </div>
     </DashboardShell>
   );
+}
+
+/* --------------------------- Calendar --------------------------- */
+
+function CampaignCalendar({
+  drafts,
+  onSelectDraft,
+}: {
+  drafts: Draft[];
+  onSelectDraft: (d: Draft) => void;
+}) {
+  const [cursor, setCursor] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayKey = toDayKey(new Date());
+
+  const byDay = useMemo(() => {
+    const map = new Map<string, Draft[]>();
+    for (const d of drafts) {
+      if (!d.send_at) continue;
+      const key = toDayKey(new Date(d.send_at));
+      const list = map.get(key) ?? [];
+      list.push(d);
+      map.set(key, list);
+    }
+    return map;
+  }, [drafts]);
+
+  const cells: Array<{ day: number | null; key: string }> = [];
+  for (let i = 0; i < firstWeekday; i++) cells.push({ day: null, key: `pad-${i}` });
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ day: d, key: toDayKey(new Date(year, month, d)) });
+  }
+  while (cells.length % 7 !== 0) cells.push({ day: null, key: `tail-${cells.length}` });
+
+  const monthLabel = cursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
+  return (
+    <div className="rounded-sm border border-hairline bg-paper">
+      <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
+        <div>
+          <div className="text-[12px] uppercase tracking-[0.14em] text-ink-muted">Calendar</div>
+          <div className="text-[15px] font-medium text-ink">{monthLabel}</div>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setCursor(new Date(year, month - 1, 1))}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-hairline-strong bg-paper text-ink-soft hover:bg-paper-soft"
+            aria-label="Previous month"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => {
+              const d = new Date();
+              setCursor(new Date(d.getFullYear(), d.getMonth(), 1));
+            }}
+            className="h-8 rounded-sm border border-hairline-strong bg-paper px-3 text-[12px] text-ink hover:bg-paper-soft"
+          >
+            Today
+          </button>
+          <button
+            onClick={() => setCursor(new Date(year, month + 1, 1))}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-hairline-strong bg-paper text-ink-soft hover:bg-paper-soft"
+            aria-label="Next month"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 border-b border-hairline bg-paper-soft text-[11px] uppercase tracking-wide text-ink-muted">
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+          <div key={d} className="px-2 py-2 text-center font-medium">{d}</div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7">
+        {cells.map((c, idx) => {
+          if (c.day === null) {
+            return <div key={c.key} className="min-h-[88px] border-b border-r border-hairline bg-paper-soft/40 last:border-r-0" />;
+          }
+          const items = byDay.get(c.key) ?? [];
+          const isToday = c.key === todayKey;
+          const isLastCol = (idx + 1) % 7 === 0;
+          return (
+            <div
+              key={c.key}
+              className={`min-h-[88px] border-b border-hairline p-1.5 ${isLastCol ? '' : 'border-r'}`}
+            >
+              <div className={`mb-1 inline-flex h-5 min-w-5 items-center justify-center rounded-sm px-1 text-[11px] ${
+                isToday ? 'bg-ink text-paper' : 'text-ink-soft'
+              }`}>
+                {c.day}
+              </div>
+              <div className="space-y-1">
+                {items.slice(0, 3).map((d) => (
+                  <button
+                    key={d.id}
+                    onClick={() => onSelectDraft(d)}
+                    title={`${d.subject} — ${formatDateTime(d.send_at!)}`}
+                    className={`block w-full truncate rounded-sm px-1.5 py-0.5 text-left text-[11px] ${calendarItemClass(d.approval_status)}`}
+                  >
+                    {d.subject || '(untitled)'}
+                  </button>
+                ))}
+                {items.length > 3 && (
+                  <div className="px-1.5 text-[10px] text-ink-muted">+{items.length - 3} more</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 border-t border-hairline px-4 py-2 text-[11px] text-ink-muted">
+        <LegendDot className="bg-emerald-soft text-emerald-deep" label="Approved" />
+        <LegendDot className="bg-[oklch(0.97_0.04_75)] text-[oklch(0.3_0.1_55)]" label="Pending" />
+        <LegendDot className="bg-paper-soft text-ink-soft" label="Sent / other" />
+      </div>
+    </div>
+  );
+}
+
+function LegendDot({ className, label }: { className: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`inline-block h-2.5 w-2.5 rounded-sm ${className}`} />
+      {label}
+    </span>
+  );
+}
+
+function calendarItemClass(status: ApprovalStatus): string {
+  switch (status) {
+    case 'approved':
+      return 'bg-emerald-soft text-emerald-deep hover:opacity-80';
+    case 'pending_approval':
+      return 'bg-[oklch(0.97_0.04_75)] text-[oklch(0.3_0.1_55)] hover:opacity-80';
+    case 'rejected':
+      return 'bg-[oklch(0.95_0.05_27)] text-destructive hover:opacity-80';
+    default:
+      return 'bg-paper-soft text-ink-soft hover:bg-hairline';
+  }
+}
+
+function toDayKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function ApprovalBadge({ status }: { status: ApprovalStatus }) {

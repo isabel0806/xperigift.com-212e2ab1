@@ -104,6 +104,7 @@ function CustomersPage() {
             <tr>
               <th className="px-4 py-3 font-medium">Email</th>
               <th className="px-4 py-3 font-medium">Name</th>
+              <th className="px-4 py-3 font-medium">Points</th>
               <th className="px-4 py-3 font-medium">Total spent</th>
               <th className="px-4 py-3 font-medium">Purchases</th>
               <th className="px-4 py-3 font-medium">Last purchase</th>
@@ -112,13 +113,13 @@ function CustomersPage() {
           <tbody>
             {customers.isLoading ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-ink-muted">
+                <td colSpan={6} className="px-4 py-8 text-center text-ink-muted">
                   Loading…
                 </td>
               </tr>
             ) : customers.data?.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-ink-muted">
+                <td colSpan={6} className="px-4 py-12 text-center text-ink-muted">
                   No customers yet.
                 </td>
               </tr>
@@ -127,6 +128,11 @@ function CustomersPage() {
                 <tr key={r.id} className="border-b border-hairline last:border-0">
                   <td className="px-4 py-3 text-ink">{r.email}</td>
                   <td className="px-4 py-3 text-ink-soft">{r.full_name || '—'}</td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex h-6 items-center rounded-sm bg-ink px-2 text-[12px] font-medium text-paper">
+                      {(r.loyalty_points ?? 0).toLocaleString()} pts
+                    </span>
+                  </td>
                   <td className="px-4 py-3 font-medium text-ink">
                     {formatCurrencyCents(r.total_spent_cents)}
                   </td>
@@ -140,6 +146,10 @@ function CustomersPage() {
           </tbody>
         </table>
       </div>
+
+      <p className="mt-4 text-[12px] text-ink-muted">
+        Loyalty points are awarded automatically when a gift card sale is recorded with the buyer's email. Configure points per gift card in Admin → Clients.
+      </p>
     </DashboardShell>
   );
 }

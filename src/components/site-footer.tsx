@@ -61,8 +61,13 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-14 flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-hairline pt-6">
-          <p className="text-[12px] text-ink-muted">© {year} Xperigift. All rights reserved.</p>
-          <p className="text-[12px] text-ink-muted">US-based. Built for operators.</p>
+          <p className="text-[12px] text-ink-muted">© {year} xperigift. All rights reserved.</p>
+          <div className="flex items-center gap-5">
+            <Link to="/login" className="text-[12px] text-ink-muted hover:text-ink">
+              Client login
+            </Link>
+            <p className="text-[12px] text-ink-muted">US-based. Built for operators.</p>
+          </div>
         </div>
       </div>
     </footer>

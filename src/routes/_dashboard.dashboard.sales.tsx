@@ -14,8 +14,9 @@ import {
   HBar,
 } from '@/components/dashboard/primitives';
 import { toast } from 'sonner';
-import { Upload, Download, Package, ShoppingBag, DollarSign, TrendingUp, LineChart as LineChartIcon } from 'lucide-react';
+import { Upload, Download, Package, ShoppingBag, DollarSign, TrendingUp, LineChart as LineChartIcon, ScanLine } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { RedeemDialog, type RedeemSale } from '@/components/redeem-dialog';
 
 export const Route = createFileRoute('/_dashboard/dashboard/sales')({
   component: SalesPage,
@@ -23,6 +24,8 @@ export const Route = createFileRoute('/_dashboard/dashboard/sales')({
 
 interface SaleRow {
   id: string;
+  client_id: string;
+  card_code: string | null;
   sold_at: string;
   amount_cents: number;
   redeemed_cents: number;
@@ -39,6 +42,7 @@ function SalesPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterProduct, setFilterProduct] = useState<string>('all');
+  const [redeemSale, setRedeemSale] = useState<RedeemSale | null>(null);
 
   const sales = useQuery({
     queryKey: ['sales', activeClientId],
@@ -46,7 +50,7 @@ function SalesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gift_card_sales')
-        .select('id, sold_at, amount_cents, redeemed_cents, status, buyer_name, buyer_email, recipient_name, product_name')
+        .select('id, client_id, card_code, sold_at, amount_cents, redeemed_cents, status, buyer_name, buyer_email, recipient_name, product_name')
         .eq('client_id', activeClientId!)
         .order('sold_at', { ascending: false })
         .limit(500);

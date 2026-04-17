@@ -26,24 +26,67 @@ export function DashboardShell({
   );
 }
 
+type Tone = 'default' | 'emerald' | 'ink' | 'amber' | 'sky';
+
+const toneClasses: Record<Tone, { wrap: string; label: string; value: string; hint: string }> = {
+  default: {
+    wrap: 'border-hairline bg-paper',
+    label: 'text-ink-muted',
+    value: 'text-ink',
+    hint: 'text-ink-muted',
+  },
+  emerald: {
+    wrap: 'border-emerald/30 bg-emerald-soft',
+    label: 'text-emerald-deep/80',
+    value: 'text-emerald-deep',
+    hint: 'text-emerald-deep/70',
+  },
+  ink: {
+    wrap: 'border-ink bg-ink',
+    label: 'text-paper/70',
+    value: 'text-paper',
+    hint: 'text-paper/60',
+  },
+  amber: {
+    wrap: 'border-[oklch(0.78_0.13_75)] bg-[oklch(0.97_0.04_75)]',
+    label: 'text-[oklch(0.4_0.1_60)]',
+    value: 'text-[oklch(0.32_0.1_55)]',
+    hint: 'text-[oklch(0.4_0.1_60)]',
+  },
+  sky: {
+    wrap: 'border-[oklch(0.78_0.07_230)] bg-[oklch(0.97_0.025_230)]',
+    label: 'text-[oklch(0.38_0.1_240)]',
+    value: 'text-[oklch(0.3_0.1_240)]',
+    hint: 'text-[oklch(0.38_0.1_240)]',
+  },
+};
+
 export function KpiCard({
   label,
   value,
   hint,
   loading,
+  tone = 'default',
+  icon,
 }: {
   label: string;
   value: string;
   hint?: string;
   loading?: boolean;
+  tone?: Tone;
+  icon?: ReactNode;
 }) {
+  const c = toneClasses[tone];
   return (
-    <div className="rounded-sm border border-hairline bg-paper p-5">
-      <p className="text-[12px] uppercase tracking-[0.14em] text-ink-muted">{label}</p>
-      <p className="mt-3 font-display text-[28px] leading-none text-ink">
-        {loading ? <Loader2 className="h-6 w-6 animate-spin text-ink-muted" /> : value}
+    <div className={`rounded-sm border p-5 ${c.wrap}`}>
+      <div className="flex items-start justify-between gap-2">
+        <p className={`text-[12px] uppercase tracking-[0.14em] ${c.label}`}>{label}</p>
+        {icon && <span className={c.value}>{icon}</span>}
+      </div>
+      <p className={`mt-3 font-display text-[28px] leading-none ${c.value}`}>
+        {loading ? <Loader2 className="h-6 w-6 animate-spin opacity-60" /> : value}
       </p>
-      {hint && <p className="mt-2 text-[12px] text-ink-muted">{hint}</p>}
+      {hint && <p className={`mt-2 text-[12px] ${c.hint}`}>{hint}</p>}
     </div>
   );
 }
@@ -94,4 +137,46 @@ export function formatDate(iso: string): string {
     day: 'numeric',
     year: 'numeric',
   });
+}
+
+/**
+ * Horizontal bar in a list — used for top-products / breakdown views.
+ * Accent palette is consistent across the dashboard.
+ */
+export const CHART_PALETTE = [
+  'oklch(0.42 0.09 165)', // emerald
+  'oklch(0.55 0.14 240)', // sky
+  'oklch(0.62 0.16 55)',  // amber
+  'oklch(0.5 0.16 320)',  // magenta
+  'oklch(0.55 0.14 200)', // teal
+  'oklch(0.45 0.1 285)',  // violet
+  'oklch(0.6 0.15 25)',   // coral
+];
+
+export function HBar({
+  label,
+  valueText,
+  ratio,
+  color,
+}: {
+  label: string;
+  valueText: string;
+  ratio: number;
+  color: string;
+}) {
+  const pct = Math.max(2, Math.min(100, ratio * 100));
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-baseline justify-between gap-3 text-[13px]">
+        <span className="truncate text-ink">{label}</span>
+        <span className="tabular-nums text-ink-soft">{valueText}</span>
+      </div>
+      <div className="h-2 w-full overflow-hidden rounded-full bg-paper-soft">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${pct}%`, backgroundColor: color }}
+        />
+      </div>
+    </div>
+  );
 }

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDashboard } from '@/lib/dashboard-context';
 import { supabase } from '@/integrations/supabase/client';
-import { saveEmailDraft } from '@/server/email-drafts';
+import { useAuth } from '@/lib/auth-context';
 import {
   DashboardShell,
   DashboardEmptyState,
@@ -259,6 +259,7 @@ function DraftEditor({
   const [sendToAll, setSendToAll] = useState<boolean>(draft.send_to_all ?? true);
   const [recipientIds, setRecipientIds] = useState<string[]>(draft.recipient_customer_ids ?? []);
   const [search, setSearch] = useState('');
+  const { user } = useAuth();
 
   const customers = useQuery({
     queryKey: ['customers-for-emails', clientId],
@@ -290,20 +291,34 @@ function DraftEditor({
       if (!subject.trim()) throw new Error('Subject is required');
       if (!rawHtml.trim()) throw new Error('Email body is required');
       if (!sendToAll && recipientIds.length === 0) throw new Error('Pick at least one recipient or send to all');
-      return saveEmailDraft({
-        data: {
-          id: draft.id,
-          clientId,
-          subject,
-          preheader: preheader || undefined,
-          rawHtml,
-          status: 'draft',
-          approvalStatus,
-          sendAt: sendAt ? new Date(sendAt).toISOString() : null,
-          sendToAll,
-          recipientCustomerIds: sendToAll ? [] : recipientIds,
-        },
-      });
+      if (!user?.id) throw new Error('You must be signed in');
+
+      const payload = {
+        subject: subject.trim(),
+        preheader: preheader.trim() || null,
+        html_sanitized: sanitizeEmailHtml(rawHtml),
+        status: 'draft' as const,
+        approval_status: approvalStatus,
+        send_at: sendAt ? new Date(sendAt).toISOString() : null,
+        send_to_all: sendToAll,
+        recipient_customer_ids: sendToAll ? [] : recipientIds,
+        submitted_at: approvalStatus === 'pending_approval' ? new Date().toISOString() : null,
+        approved_at: approvalStatus === 'approved' ? new Date().toISOString() : null,
+      };
+
+      if (draft.id) {
+        const { error } = await supabase
+          .from('email_drafts')
+          .update(payload)
+          .eq('id', draft.id)
+          .eq('client_id', clientId);
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await supabase
+          .from('email_drafts')
+          .insert({ ...payload, client_id: clientId, created_by: user.id });
+        if (error) throw new Error(error.message);
+      }
     },
     onSuccess: (_r, status) => {
       toast.success(status === 'pending_approval' ? 'Saved & queued for approval' : 'Saved');

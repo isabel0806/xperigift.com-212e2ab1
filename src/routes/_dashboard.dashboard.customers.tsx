@@ -244,7 +244,7 @@ function CustomerDetailSheet({
               {txns.isLoading ? (
                 <p className="py-8 text-center text-[13px] text-ink-muted">Loading history…</p>
               ) : txns.error ? (
-                <p className="py-8 text-center text-[13px] text-rose-600">
+                <p className="py-8 text-center text-[13px] text-destructive">
                   Could not load history.
                 </p>
               ) : !txns.data || txns.data.length === 0 ? (

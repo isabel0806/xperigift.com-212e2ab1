@@ -38,7 +38,7 @@ function AdminClientsPage() {
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [invitingClientId, setInvitingClientId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', industry: '', website: '', notes: '' });
+  const [form, setForm] = useState({ name: '', industry: '', website: '', notes: '', points_per_giftcard: 10 });
 
   const allowed = isAdmin || authAdmin;
 
@@ -48,7 +48,7 @@ function AdminClientsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, name, industry, website, is_active, created_at')
+        .select('id, name, industry, website, is_active, created_at, points_per_giftcard')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -56,23 +56,47 @@ function AdminClientsPage() {
   });
 
   const create = useMutation({
-    mutationFn: async () =>
-      createClientAccount({
+    mutationFn: async () => {
+      const result = await createClientAccount({
         data: {
           name: form.name,
           industry: form.industry ? (form.industry as 'spa') : undefined,
           website: form.website || undefined,
           notes: form.notes || undefined,
         },
-      }),
+      });
+      // Set initial points config (createClientAccount uses defaults)
+      if (form.points_per_giftcard !== 10 && result?.client?.id) {
+        await supabase
+          .from('clients')
+          .update({ points_per_giftcard: form.points_per_giftcard })
+          .eq('id', result.client.id);
+      }
+      return result;
+    },
     onSuccess: () => {
       toast.success('Client created');
       setCreating(false);
-      setForm({ name: '', industry: '', website: '', notes: '' });
+      setForm({ name: '', industry: '', website: '', notes: '', points_per_giftcard: 10 });
       qc.invalidateQueries({ queryKey: ['admin-clients'] });
       qc.invalidateQueries({ queryKey: ['clients-for-user'] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Create failed'),
+  });
+
+  const updatePoints = useMutation({
+    mutationFn: async ({ id, points }: { id: string; points: number }) => {
+      const { error } = await supabase
+        .from('clients')
+        .update({ points_per_giftcard: points })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Points config updated');
+      qc.invalidateQueries({ queryKey: ['admin-clients'] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Update failed'),
   });
 
   if (!allowed) {

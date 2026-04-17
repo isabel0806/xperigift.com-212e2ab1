@@ -41,7 +41,7 @@ function CustomersPage() {
 
   const exportCsv = () => {
     if (!customers.data?.length) return;
-    const header = ['email', 'full_name', 'phone', 'total_spent', 'purchase_count', 'last_purchase_at'];
+    const header = ['email', 'full_name', 'phone', 'total_spent', 'purchase_count', 'loyalty_points', 'last_purchase_at'];
     const lines = [header.join(',')];
     for (const r of customers.data) {
       lines.push(
@@ -51,6 +51,7 @@ function CustomersPage() {
           escapeCsv(r.phone ?? ''),
           (r.total_spent_cents / 100).toFixed(2),
           String(r.purchase_count),
+          String(r.loyalty_points ?? 0),
           r.last_purchase_at ?? '',
         ].join(','),
       );

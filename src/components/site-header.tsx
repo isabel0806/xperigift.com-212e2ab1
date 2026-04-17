@@ -34,7 +34,14 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="hidden md:flex items-center">
+        <div className="hidden md:flex items-center gap-5">
+          <Link
+            to="/login"
+            className="text-[14px] text-ink-soft hover:text-ink transition-colors"
+            activeProps={{ className: 'text-ink font-medium' }}
+          >
+            Client sign in
+          </Link>
           <Link
             to="/book-audit"
             className="inline-flex h-10 items-center rounded-sm bg-ink px-5 text-[14px] font-medium text-paper transition-colors hover:bg-ink-soft"

@@ -38,7 +38,7 @@ function AdminClientsPage() {
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [invitingClientId, setInvitingClientId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', industry: '', website: '', notes: '' });
+  const [form, setForm] = useState({ name: '', industry: '', website: '', notes: '', points_per_giftcard: 10 });
 
   const allowed = isAdmin || authAdmin;
 
@@ -48,7 +48,7 @@ function AdminClientsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, name, industry, website, is_active, created_at')
+        .select('id, name, industry, website, is_active, created_at, points_per_giftcard')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -56,23 +56,47 @@ function AdminClientsPage() {
   });
 
   const create = useMutation({
-    mutationFn: async () =>
-      createClientAccount({
+    mutationFn: async () => {
+      const result = await createClientAccount({
         data: {
           name: form.name,
           industry: form.industry ? (form.industry as 'spa') : undefined,
           website: form.website || undefined,
           notes: form.notes || undefined,
         },
-      }),
+      });
+      // Set initial points config (createClientAccount uses defaults)
+      if (form.points_per_giftcard !== 10 && result?.client?.id) {
+        await supabase
+          .from('clients')
+          .update({ points_per_giftcard: form.points_per_giftcard })
+          .eq('id', result.client.id);
+      }
+      return result;
+    },
     onSuccess: () => {
       toast.success('Client created');
       setCreating(false);
-      setForm({ name: '', industry: '', website: '', notes: '' });
+      setForm({ name: '', industry: '', website: '', notes: '', points_per_giftcard: 10 });
       qc.invalidateQueries({ queryKey: ['admin-clients'] });
       qc.invalidateQueries({ queryKey: ['clients-for-user'] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : 'Create failed'),
+  });
+
+  const updatePoints = useMutation({
+    mutationFn: async ({ id, points }: { id: string; points: number }) => {
+      const { error } = await supabase
+        .from('clients')
+        .update({ points_per_giftcard: points })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Points config updated');
+      qc.invalidateQueries({ queryKey: ['admin-clients'] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Update failed'),
   });
 
   if (!allowed) {
@@ -132,6 +156,17 @@ function AdminClientsPage() {
               />
             </div>
             <div className="sm:col-span-2">
+              <label className="block text-[13px] font-medium text-ink">Loyalty points per gift card sold</label>
+              <input
+                type="number"
+                min={0}
+                value={form.points_per_giftcard}
+                onChange={(e) => setForm({ ...form, points_per_giftcard: Math.max(0, parseInt(e.target.value) || 0) })}
+                className="mt-2 w-full sm:w-40 rounded-sm border border-hairline-strong bg-paper px-3 h-10 text-[14px]"
+              />
+              <p className="mt-1 text-[12px] text-ink-muted">Awarded automatically to the buyer when a sale is recorded.</p>
+            </div>
+            <div className="sm:col-span-2">
               <label className="block text-[13px] font-medium text-ink">Notes</label>
               <textarea
                 value={form.notes}
@@ -165,6 +200,8 @@ function AdminClientsPage() {
               client={c}
               expanded={invitingClientId === c.id}
               onToggle={() => setInvitingClientId((v) => (v === c.id ? null : c.id))}
+              onUpdatePoints={(points) => updatePoints.mutate({ id: c.id, points })}
+              isSavingPoints={updatePoints.isPending}
             />
           ))
         )}
@@ -177,14 +214,19 @@ function ClientRow({
   client,
   expanded,
   onToggle,
+  onUpdatePoints,
+  isSavingPoints,
 }: {
-  client: { id: string; name: string; industry: string | null; website: string | null; is_active: boolean; created_at: string };
+  client: { id: string; name: string; industry: string | null; website: string | null; is_active: boolean; created_at: string; points_per_giftcard: number };
   expanded: boolean;
   onToggle: () => void;
+  onUpdatePoints: (points: number) => void;
+  isSavingPoints: boolean;
 }) {
   const qc = useQueryClient();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [pointsDraft, setPointsDraft] = useState<number>(client.points_per_giftcard);
 
   const members = useQuery({
     queryKey: ['client-members', client.id],
@@ -221,7 +263,7 @@ function ClientRow({
         <div>
           <p className="font-medium text-ink">{client.name}</p>
           <p className="text-[12px] text-ink-muted">
-            {client.industry || 'No industry'} · created {formatDate(client.created_at)}
+            {client.industry || 'No industry'} · {client.points_per_giftcard} pts/gift card · created {formatDate(client.created_at)}
           </p>
         </div>
         <button
@@ -229,7 +271,7 @@ function ClientRow({
           className="inline-flex h-9 items-center gap-2 rounded-sm border border-hairline-strong bg-paper px-3 text-[13px] text-ink hover:bg-paper-soft"
         >
           <UserPlus className="h-4 w-4" />
-          {expanded ? 'Hide' : 'Manage users'}
+          {expanded ? 'Hide' : 'Manage'}
         </button>
       </div>
       {expanded && (
@@ -256,6 +298,32 @@ function ClientRow({
             >
               {invite.isPending ? 'Inviting…' : 'Invite'}
             </button>
+          </div>
+
+          <div className="mt-5 rounded-sm border border-hairline bg-paper p-4">
+            <p className="text-[12px] uppercase tracking-[0.14em] text-ink-muted">Loyalty program</p>
+            <div className="mt-2 flex items-end gap-3">
+              <div>
+                <label className="block text-[12px] text-ink-muted">Points awarded per gift card sold</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={pointsDraft}
+                  onChange={(e) => setPointsDraft(Math.max(0, parseInt(e.target.value) || 0))}
+                  className="mt-1 w-32 rounded-sm border border-hairline-strong bg-paper px-3 h-9 text-[14px]"
+                />
+              </div>
+              <button
+                onClick={() => onUpdatePoints(pointsDraft)}
+                disabled={isSavingPoints || pointsDraft === client.points_per_giftcard}
+                className="inline-flex h-9 items-center rounded-sm bg-ink px-3 text-[13px] text-paper hover:bg-ink-soft disabled:opacity-60"
+              >
+                {isSavingPoints ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+            <p className="mt-2 text-[12px] text-ink-muted">
+              Awarded automatically to the buyer when a sale is recorded with their email.
+            </p>
           </div>
 
           <div className="mt-5">

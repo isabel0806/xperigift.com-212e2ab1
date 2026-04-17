@@ -25,9 +25,9 @@ function CustomersPage() {
     queryFn: async () => {
       let q = supabase
         .from('customers')
-        .select('id, email, full_name, phone, total_spent_cents, purchase_count, last_purchase_at')
+        .select('id, email, full_name, phone, total_spent_cents, purchase_count, last_purchase_at, loyalty_points')
         .eq('client_id', activeClientId!)
-        .order('last_purchase_at', { ascending: false, nullsFirst: false })
+        .order('loyalty_points', { ascending: false })
         .limit(500);
       if (search.trim()) {
         const term = `%${search.trim()}%`;
@@ -41,7 +41,7 @@ function CustomersPage() {
 
   const exportCsv = () => {
     if (!customers.data?.length) return;
-    const header = ['email', 'full_name', 'phone', 'total_spent', 'purchase_count', 'last_purchase_at'];
+    const header = ['email', 'full_name', 'phone', 'total_spent', 'purchase_count', 'loyalty_points', 'last_purchase_at'];
     const lines = [header.join(',')];
     for (const r of customers.data) {
       lines.push(
@@ -51,6 +51,7 @@ function CustomersPage() {
           escapeCsv(r.phone ?? ''),
           (r.total_spent_cents / 100).toFixed(2),
           String(r.purchase_count),
+          String(r.loyalty_points ?? 0),
           r.last_purchase_at ?? '',
         ].join(','),
       );
@@ -103,6 +104,7 @@ function CustomersPage() {
             <tr>
               <th className="px-4 py-3 font-medium">Email</th>
               <th className="px-4 py-3 font-medium">Name</th>
+              <th className="px-4 py-3 font-medium">Points</th>
               <th className="px-4 py-3 font-medium">Total spent</th>
               <th className="px-4 py-3 font-medium">Purchases</th>
               <th className="px-4 py-3 font-medium">Last purchase</th>
@@ -111,13 +113,13 @@ function CustomersPage() {
           <tbody>
             {customers.isLoading ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-ink-muted">
+                <td colSpan={6} className="px-4 py-8 text-center text-ink-muted">
                   Loading…
                 </td>
               </tr>
             ) : customers.data?.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-ink-muted">
+                <td colSpan={6} className="px-4 py-12 text-center text-ink-muted">
                   No customers yet.
                 </td>
               </tr>
@@ -126,6 +128,11 @@ function CustomersPage() {
                 <tr key={r.id} className="border-b border-hairline last:border-0">
                   <td className="px-4 py-3 text-ink">{r.email}</td>
                   <td className="px-4 py-3 text-ink-soft">{r.full_name || '—'}</td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex h-6 items-center rounded-sm bg-ink px-2 text-[12px] font-medium text-paper">
+                      {(r.loyalty_points ?? 0).toLocaleString()} pts
+                    </span>
+                  </td>
                   <td className="px-4 py-3 font-medium text-ink">
                     {formatCurrencyCents(r.total_spent_cents)}
                   </td>
@@ -139,6 +146,10 @@ function CustomersPage() {
           </tbody>
         </table>
       </div>
+
+      <p className="mt-4 text-[12px] text-ink-muted">
+        Loyalty points are awarded automatically when a gift card sale is recorded with the buyer's email. Configure points per gift card in Admin → Clients.
+      </p>
     </DashboardShell>
   );
 }

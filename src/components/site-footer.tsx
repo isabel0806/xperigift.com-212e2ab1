@@ -8,8 +8,8 @@ export function SiteFooter() {
         <div className="grid gap-10 md:grid-cols-12">
           <div className="md:col-span-5">
             <div className="flex items-center gap-2">
-              <span className="font-display text-[22px] font-semibold tracking-tight text-ink leading-none">
-                Xperigift
+              <span className="font-display text-[22px] font-semibold tracking-tight text-ink leading-none lowercase">
+                xperigift
               </span>
               <span className="h-1.5 w-1.5 rounded-full bg-emerald" aria-hidden />
             </div>

@@ -116,6 +116,37 @@ function SalesPage() {
       .sort((a, b) => b.amount - a.amount);
   }, [sales.data]);
 
+  // Monthly trend (last 12 months, oldest -> newest)
+  const monthlyTrend = useMemo(() => {
+    const rows = sales.data ?? [];
+    const buckets = new Map<string, { revenue: number; count: number }>();
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      buckets.set(key, { revenue: 0, count: 0 });
+    }
+    for (const r of rows) {
+      const d = new Date(r.sold_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const b = buckets.get(key);
+      if (!b) continue;
+      b.revenue += r.amount_cents;
+      b.count += 1;
+    }
+    return Array.from(buckets.entries()).map(([key, v]) => {
+      const [y, m] = key.split('-');
+      const label = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString(undefined, {
+        month: 'short',
+      });
+      return {
+        month: label,
+        revenue: Math.round(v.revenue / 100),
+        count: v.count,
+      };
+    });
+  }, [sales.data]);
+
   const productOptions = useMemo(
     () => productBreakdown.map((p) => p.name),
     [productBreakdown],

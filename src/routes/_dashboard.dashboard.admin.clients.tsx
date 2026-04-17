@@ -200,6 +200,8 @@ function AdminClientsPage() {
               client={c}
               expanded={invitingClientId === c.id}
               onToggle={() => setInvitingClientId((v) => (v === c.id ? null : c.id))}
+              onUpdatePoints={(points) => updatePoints.mutate({ id: c.id, points })}
+              isSavingPoints={updatePoints.isPending}
             />
           ))
         )}

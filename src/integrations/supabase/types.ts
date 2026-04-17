@@ -455,6 +455,42 @@ export type Database = {
           },
         ]
       }
+      marketing_holidays: {
+        Row: {
+          category: Database["public"]["Enums"]["holiday_category"]
+          created_at: string
+          emoji: string | null
+          holiday_date: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["holiday_category"]
+          created_at?: string
+          emoji?: string | null
+          holiday_date: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["holiday_category"]
+          created_at?: string
+          emoji?: string | null
+          holiday_date?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -527,6 +563,7 @@ export type Database = {
         | "refunded"
         | "expired"
       gift_card_status: "have_program" | "considering" | "none"
+      holiday_category: "federal" | "retail" | "observance"
       industry_vertical:
         | "spa"
         | "salon"
@@ -694,6 +731,7 @@ export const Constants = {
         "expired",
       ],
       gift_card_status: ["have_program", "considering", "none"],
+      holiday_category: ["federal", "retail", "observance"],
       industry_vertical: [
         "spa",
         "salon",

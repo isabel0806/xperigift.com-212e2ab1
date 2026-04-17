@@ -248,6 +248,34 @@ function CampaignCalendar({
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const todayKey = toDayKey(new Date());
 
+  const monthStart = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const monthEnd = toDayKey(new Date(year, month + 1, 0));
+
+  const holidays = useQuery({
+    queryKey: ['marketing-holidays', monthStart, monthEnd],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('marketing_holidays')
+        .select('id, name, holiday_date, emoji, category')
+        .eq('is_active', true)
+        .gte('holiday_date', monthStart)
+        .lte('holiday_date', monthEnd)
+        .order('holiday_date');
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const holidaysByDay = useMemo(() => {
+    const map = new Map<string, typeof holidays.data>();
+    for (const h of holidays.data ?? []) {
+      const list = map.get(h.holiday_date) ?? [];
+      list.push(h);
+      map.set(h.holiday_date, list);
+    }
+    return map;
+  }, [holidays.data]);
+
   const byDay = useMemo(() => {
     const map = new Map<string, Draft[]>();
     for (const d of drafts) {
@@ -315,6 +343,7 @@ function CampaignCalendar({
             return <div key={c.key} className="min-h-[88px] border-b border-r border-hairline bg-paper-soft/40 last:border-r-0" />;
           }
           const items = byDay.get(c.key) ?? [];
+          const dayHolidays = holidaysByDay.get(c.key) ?? [];
           const isToday = c.key === todayKey;
           const isLastCol = (idx + 1) % 7 === 0;
           return (
@@ -322,11 +351,27 @@ function CampaignCalendar({
               key={c.key}
               className={`min-h-[88px] border-b border-hairline p-1.5 ${isLastCol ? '' : 'border-r'}`}
             >
-              <div className={`mb-1 inline-flex h-5 min-w-5 items-center justify-center rounded-sm px-1 text-[11px] ${
-                isToday ? 'bg-ink text-paper' : 'text-ink-soft'
-              }`}>
-                {c.day}
+              <div className="mb-1 flex items-center justify-between gap-1">
+                <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-sm px-1 text-[11px] ${
+                  isToday ? 'bg-ink text-paper' : 'text-ink-soft'
+                }`}>
+                  {c.day}
+                </span>
               </div>
+              {dayHolidays.length > 0 && (
+                <div className="mb-1 space-y-0.5">
+                  {dayHolidays.map((h) => (
+                    <div
+                      key={h.id}
+                      title={h.name}
+                      className={`flex items-center gap-1 truncate rounded-sm px-1.5 py-0.5 text-[10px] ${holidayPillClass(h.category)}`}
+                    >
+                      {h.emoji && <span aria-hidden>{h.emoji}</span>}
+                      <span className="truncate">{h.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="space-y-1">
                 {items.slice(0, 3).map((d) => (
                   <button
@@ -351,6 +396,10 @@ function CampaignCalendar({
         <LegendDot className="bg-emerald-soft text-emerald-deep" label="Approved" />
         <LegendDot className="bg-[oklch(0.97_0.04_75)] text-[oklch(0.3_0.1_55)]" label="Pending" />
         <LegendDot className="bg-paper-soft text-ink-soft" label="Sent / other" />
+        <span className="ml-auto inline-flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[oklch(0.94_0.06_300)]" />
+          Holiday
+        </span>
       </div>
     </div>
   );
@@ -375,6 +424,17 @@ function calendarItemClass(status: ApprovalStatus): string {
       return 'bg-[oklch(0.95_0.05_27)] text-destructive hover:opacity-80';
     default:
       return 'bg-paper-soft text-ink-soft hover:bg-hairline';
+  }
+}
+
+function holidayPillClass(category: string): string {
+  switch (category) {
+    case 'federal':
+      return 'bg-[oklch(0.94_0.05_250)] text-[oklch(0.32_0.13_250)]';
+    case 'retail':
+      return 'bg-[oklch(0.94_0.06_300)] text-[oklch(0.32_0.16_300)]';
+    default:
+      return 'bg-paper-soft text-ink-soft';
   }
 }
 

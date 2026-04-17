@@ -40,15 +40,16 @@ function OverviewPage() {
   });
 
   const customers = useQuery({
-    queryKey: ['customers-count', activeClientId],
+    queryKey: ['customers-stats', activeClientId],
     enabled: !!activeClientId,
     queryFn: async () => {
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from('customers')
-        .select('id', { count: 'exact', head: true })
+        .select('loyalty_points')
         .eq('client_id', activeClientId!);
       if (error) throw error;
-      return count ?? 0;
+      const totalPoints = (data ?? []).reduce((s, r) => s + (r.loyalty_points ?? 0), 0);
+      return { count: data?.length ?? 0, totalPoints };
     },
   });
 
@@ -94,7 +95,7 @@ function OverviewPage() {
         />
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <KpiCard
           label="Total cards sold"
           value={s ? formatNumber(s.count) : '—'}
@@ -102,7 +103,13 @@ function OverviewPage() {
         />
         <KpiCard
           label="Customers in CRM"
-          value={customers.data !== undefined ? formatNumber(customers.data) : '—'}
+          value={customers.data ? formatNumber(customers.data.count) : '—'}
+          loading={customers.isLoading}
+        />
+        <KpiCard
+          label="Loyalty points outstanding"
+          value={customers.data ? formatNumber(customers.data.totalPoints) : '—'}
+          hint="Across all customers"
           loading={customers.isLoading}
         />
       </div>

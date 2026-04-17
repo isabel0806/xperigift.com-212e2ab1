@@ -1,15 +1,16 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowRight } from 'lucide-react';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 
 type Variant = 'primary' | 'outline' | 'ghost';
 type Size = 'md' | 'lg';
 
-type Props = Omit<ComponentProps<typeof Link>, 'className'> & {
+type Props = Omit<ComponentProps<typeof Link>, 'className' | 'children'> & {
   variant?: Variant;
   size?: Size;
   className?: string;
   withArrow?: boolean;
+  children?: ReactNode;
 };
 
 const variantClasses: Record<Variant, string> = {

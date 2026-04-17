@@ -14,158 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
-      asset_assignments: {
+      audit_bookings: {
         Row: {
-          asset_id: string
-          assigned_date: string
+          biggest_challenge: string
+          business_name: string
           created_at: string
-          employee_id: string
+          duration_minutes: number
+          email: string
+          full_name: string
+          gift_card_status: Database["public"]["Enums"]["gift_card_status"]
           id: string
-          notes: string | null
-          returned_date: string | null
+          industry: Database["public"]["Enums"]["industry_vertical"]
+          industry_other: string | null
+          phone: string | null
+          revenue_band: Database["public"]["Enums"]["revenue_band"]
+          scheduled_at: string
+          source: string | null
+          status: Database["public"]["Enums"]["audit_status"]
+          timezone: string
+          updated_at: string
+          website: string | null
         }
         Insert: {
-          asset_id: string
-          assigned_date?: string
+          biggest_challenge: string
+          business_name: string
           created_at?: string
-          employee_id: string
+          duration_minutes?: number
+          email: string
+          full_name: string
+          gift_card_status: Database["public"]["Enums"]["gift_card_status"]
           id?: string
-          notes?: string | null
-          returned_date?: string | null
+          industry: Database["public"]["Enums"]["industry_vertical"]
+          industry_other?: string | null
+          phone?: string | null
+          revenue_band: Database["public"]["Enums"]["revenue_band"]
+          scheduled_at: string
+          source?: string | null
+          status?: Database["public"]["Enums"]["audit_status"]
+          timezone?: string
+          updated_at?: string
+          website?: string | null
         }
         Update: {
-          asset_id?: string
-          assigned_date?: string
+          biggest_challenge?: string
+          business_name?: string
           created_at?: string
-          employee_id?: string
+          duration_minutes?: number
+          email?: string
+          full_name?: string
+          gift_card_status?: Database["public"]["Enums"]["gift_card_status"]
           id?: string
-          notes?: string | null
-          returned_date?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "asset_assignments_asset_id_fkey"
-            columns: ["asset_id"]
-            isOneToOne: false
-            referencedRelation: "assets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "asset_assignments_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      asset_categories: {
-        Row: {
-          created_at: string
-          default_useful_life_years: number
-          id: string
-          name: string
-          residual_value_percent: number
-        }
-        Insert: {
-          created_at?: string
-          default_useful_life_years?: number
-          id?: string
-          name: string
-          residual_value_percent?: number
-        }
-        Update: {
-          created_at?: string
-          default_useful_life_years?: number
-          id?: string
-          name?: string
-          residual_value_percent?: number
+          industry?: Database["public"]["Enums"]["industry_vertical"]
+          industry_other?: string | null
+          phone?: string | null
+          revenue_band?: Database["public"]["Enums"]["revenue_band"]
+          scheduled_at?: string
+          source?: string | null
+          status?: Database["public"]["Enums"]["audit_status"]
+          timezone?: string
+          updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
-      assets: {
+      availability_windows: {
         Row: {
-          category_id: string | null
-          condition: Database["public"]["Enums"]["asset_condition"]
           created_at: string
-          created_by: string | null
+          day_of_week: number
+          end_time: string
           id: string
-          is_archived: boolean
-          location: string | null
-          name: string
-          notes: string | null
-          purchase_cost: number
-          purchase_date: string
-          residual_value_percent: number
-          serial_number: string | null
-          updated_at: string
-          useful_life_years: number
+          is_active: boolean
+          slot_duration_minutes: number
+          start_time: string
+          timezone: string
         }
         Insert: {
-          category_id?: string | null
-          condition?: Database["public"]["Enums"]["asset_condition"]
           created_at?: string
-          created_by?: string | null
+          day_of_week: number
+          end_time: string
           id?: string
-          is_archived?: boolean
-          location?: string | null
-          name: string
-          notes?: string | null
-          purchase_cost?: number
-          purchase_date: string
-          residual_value_percent?: number
-          serial_number?: string | null
-          updated_at?: string
-          useful_life_years?: number
+          is_active?: boolean
+          slot_duration_minutes?: number
+          start_time: string
+          timezone?: string
         }
         Update: {
-          category_id?: string | null
-          condition?: Database["public"]["Enums"]["asset_condition"]
           created_at?: string
-          created_by?: string | null
+          day_of_week?: number
+          end_time?: string
           id?: string
-          is_archived?: boolean
-          location?: string | null
-          name?: string
-          notes?: string | null
-          purchase_cost?: number
-          purchase_date?: string
-          residual_value_percent?: number
-          serial_number?: string | null
-          updated_at?: string
-          useful_life_years?: number
+          is_active?: boolean
+          slot_duration_minutes?: number
+          start_time?: string
+          timezone?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "assets_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "asset_categories"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      employees: {
+      blocked_dates: {
         Row: {
+          blocked_date: string
           created_at: string
-          department: string | null
-          email: string | null
           id: string
-          name: string
+          reason: string | null
         }
         Insert: {
+          blocked_date: string
           created_at?: string
-          department?: string | null
-          email?: string | null
           id?: string
-          name: string
+          reason?: string | null
         }
         Update: {
+          blocked_date?: string
           created_at?: string
-          department?: string | null
-          email?: string | null
           id?: string
-          name?: string
+          reason?: string | null
         }
         Relationships: []
       }
@@ -195,6 +157,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_booked_slots: {
+        Args: { range_end: string; range_start: string }
+        Returns: {
+          scheduled_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -205,7 +173,22 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
-      asset_condition: "excellent" | "good" | "fair" | "poor" | "retired"
+      audit_status:
+        | "pending"
+        | "confirmed"
+        | "completed"
+        | "cancelled"
+        | "no_show"
+      gift_card_status: "have_program" | "considering" | "none"
+      industry_vertical:
+        | "spa"
+        | "salon"
+        | "restaurant"
+        | "golf_club"
+        | "specialty_retail"
+        | "gun_shop"
+        | "other"
+      revenue_band: "under_150k" | "150k_500k" | "500k_1m" | "1m_2m" | "over_2m"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -334,7 +317,24 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
-      asset_condition: ["excellent", "good", "fair", "poor", "retired"],
+      audit_status: [
+        "pending",
+        "confirmed",
+        "completed",
+        "cancelled",
+        "no_show",
+      ],
+      gift_card_status: ["have_program", "considering", "none"],
+      industry_vertical: [
+        "spa",
+        "salon",
+        "restaurant",
+        "golf_club",
+        "specialty_retail",
+        "gun_shop",
+        "other",
+      ],
+      revenue_band: ["under_150k", "150k_500k", "500k_1m", "1m_2m", "over_2m"],
     },
   },
 } as const

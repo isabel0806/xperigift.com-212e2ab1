@@ -329,6 +329,97 @@ export type Database = {
           },
         ]
       }
+      gift_card_product_items: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          name: string
+          product_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          name: string
+          product_id: string
+          quantity?: number
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          name?: string
+          product_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_card_product_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "gift_card_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gift_card_products: {
+        Row: {
+          client_id: string
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          price_cents: number | null
+          product_type: Database["public"]["Enums"]["gift_card_product_type"]
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          price_cents?: number | null
+          product_type?: Database["public"]["Enums"]["gift_card_product_type"]
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          price_cents?: number | null
+          product_type?: Database["public"]["Enums"]["gift_card_product_type"]
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_card_products_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gift_card_redemptions: {
         Row: {
           amount_cents: number
@@ -607,6 +698,7 @@ export type Database = {
         | "scheduled"
         | "sent"
         | "archived"
+      gift_card_product_type: "one_time" | "bundle" | "open_amount"
       gift_card_sale_status:
         | "sold"
         | "partially_redeemed"
@@ -774,6 +866,7 @@ export const Constants = {
         "sent",
         "archived",
       ],
+      gift_card_product_type: ["one_time", "bundle", "open_amount"],
       gift_card_sale_status: [
         "sold",
         "partially_redeemed",

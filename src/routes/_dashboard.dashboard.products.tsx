@@ -27,6 +27,15 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, Package, Gift, DollarSign, Tag, Image as ImageIcon } from 'lucide-react';
+import sampleRecoveryStarter from '@/assets/sample-recovery-starter.png';
+import sampleMobilityKit from '@/assets/sample-mobility-kit.png';
+import sampleRunnersPack from '@/assets/sample-runners-pack.png';
+
+const SAMPLE_IMAGES: { label: string; url: string }[] = [
+  { label: 'Recovery starter', url: sampleRecoveryStarter },
+  { label: 'Mobility & movement kit', url: sampleMobilityKit },
+  { label: 'Runners recovery pack', url: sampleRunnersPack },
+];
 
 export const Route = createFileRoute('/_dashboard/dashboard/products')({
   component: ProductsPage,
@@ -519,6 +528,47 @@ function ProductsPage() {
                 onChange={(e) => setForm({ ...form, image_url: e.target.value })}
                 placeholder="https://…"
               />
+              <div className="pt-1">
+                <p className="text-[12px] text-ink-muted mb-2">Or pick a sample image:</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {SAMPLE_IMAGES.map((img) => {
+                    const selected = form.image_url === img.url;
+                    return (
+                      <button
+                        key={img.url}
+                        type="button"
+                        onClick={() => setForm({ ...form, image_url: img.url })}
+                        className={`group relative aspect-[16/10] overflow-hidden rounded-md border transition ${
+                          selected
+                            ? 'border-emerald ring-2 ring-emerald/30'
+                            : 'border-hairline hover:border-hairline-strong'
+                        }`}
+                        title={img.label}
+                      >
+                        <img src={img.url} alt={img.label} className="h-full w-full object-cover" />
+                        <span className="absolute inset-x-0 bottom-0 bg-ink/70 px-1.5 py-0.5 text-[10px] text-paper truncate">
+                          {img.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {form.image_url && (
+                <div className="pt-2">
+                  <p className="text-[12px] text-ink-muted mb-1">Preview</p>
+                  <div className="aspect-[16/9] overflow-hidden rounded-md border border-hairline bg-paper-soft">
+                    <img
+                      src={form.image_url}
+                      alt="Preview"
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

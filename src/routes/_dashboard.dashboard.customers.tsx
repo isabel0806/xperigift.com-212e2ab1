@@ -1,8 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useServerFn } from '@tanstack/react-start';
 import { useDashboard } from '@/lib/dashboard-context';
 import { supabase } from '@/integrations/supabase/client';
+import { importFromGoHighLevel } from '@/server/ghl-import';
 import {
   DashboardShell,
   DashboardEmptyState,
@@ -18,7 +20,7 @@ import {
 } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import {
-  Download, Search, ArrowUpRight, ArrowDownRight, Settings2, Clock, Save,
+  Download, Search, ArrowUpRight, ArrowDownRight, Settings2, Clock, Save, CloudDownload,
 } from 'lucide-react';
 
 export const Route = createFileRoute('/_dashboard/dashboard/customers')({
@@ -41,8 +43,26 @@ type CustomerRow = {
 
 function CustomersPage() {
   const { activeClientId } = useDashboard();
+  const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<CustomerRow | null>(null);
+
+  const importGhl = useServerFn(importFromGoHighLevel);
+  const ghlImport = useMutation({
+    mutationFn: async () => {
+      if (!activeClientId) throw new Error('No active workspace');
+      return importGhl({ data: { clientId: activeClientId } });
+    },
+    onSuccess: (r) => {
+      toast.success(
+        `GHL import complete — Contacts: +${r.contacts.created} new, ${r.contacts.updated} updated · Sales: +${r.sales.created} new, ${r.sales.updated} updated`,
+      );
+      qc.invalidateQueries({ queryKey: ['customers'] });
+      qc.invalidateQueries({ queryKey: ['sales'] });
+      qc.invalidateQueries({ queryKey: ['dashboard-kpis'] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'GHL import failed'),
+  });
 
   const customers = useQuery({
     queryKey: ['customers', activeClientId, search],
@@ -105,14 +125,24 @@ function CustomersPage() {
       title="Customers"
       subtitle="Buyers and recipients tied to your gift card program."
       actions={
-        <button
-          onClick={exportCsv}
-          disabled={!customers.data?.length}
-          className="inline-flex h-9 items-center gap-2 rounded-sm bg-ink px-3 text-[13px] text-paper hover:bg-ink-soft disabled:opacity-60"
-        >
-          <Download className="h-4 w-4" />
-          Export CSV
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => ghlImport.mutate()}
+            disabled={ghlImport.isPending}
+            className="inline-flex h-9 items-center gap-2 rounded-sm border border-hairline-strong bg-paper px-3 text-[13px] text-ink hover:bg-paper-soft disabled:opacity-60"
+          >
+            <CloudDownload className="h-4 w-4" />
+            {ghlImport.isPending ? 'Importing…' : 'Import from GoHighLevel'}
+          </button>
+          <button
+            onClick={exportCsv}
+            disabled={!customers.data?.length}
+            className="inline-flex h-9 items-center gap-2 rounded-sm bg-ink px-3 text-[13px] text-paper hover:bg-ink-soft disabled:opacity-60"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </button>
+        </div>
       }
     >
       <div className="mb-4 relative">

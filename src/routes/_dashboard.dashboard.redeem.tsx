@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useDashboard } from '@/lib/dashboard-context';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +10,7 @@ import {
   formatDate,
 } from '@/components/dashboard/primitives';
 import { RedeemDialog, type RedeemSale } from '@/components/redeem-dialog';
-import { ScanLine, Search } from 'lucide-react';
+import { ScanLine, Search, Download } from 'lucide-react';
 
 export const Route = createFileRoute('/_dashboard/dashboard/redeem')({
   component: RedeemPage,
@@ -22,6 +22,9 @@ function RedeemPage() {
   const [code, setCode] = useState('');
   const [submittedCode, setSubmittedCode] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [filterFrom, setFilterFrom] = useState('');
+  const [filterTo, setFilterTo] = useState('');
+  const [filterCode, setFilterCode] = useState('');
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -53,11 +56,48 @@ function RedeemPage() {
         .select('id, amount_cents, redeemed_at, card_code_snapshot, note')
         .eq('client_id', activeClientId!)
         .order('redeemed_at', { ascending: false })
-        .limit(15);
+        .limit(500);
       if (error) throw error;
       return data ?? [];
     },
   });
+
+  const filteredRedemptions = useMemo(() => {
+    const rows = recent.data ?? [];
+    const fromTs = filterFrom ? new Date(filterFrom + 'T00:00:00').getTime() : null;
+    const toTs = filterTo ? new Date(filterTo + 'T23:59:59').getTime() : null;
+    const codeQ = filterCode.trim().toLowerCase();
+    return rows.filter((r) => {
+      const ts = new Date(r.redeemed_at).getTime();
+      if (fromTs !== null && ts < fromTs) return false;
+      if (toTs !== null && ts > toTs) return false;
+      if (codeQ && !(r.card_code_snapshot ?? '').toLowerCase().includes(codeQ)) return false;
+      return true;
+    });
+  }, [recent.data, filterFrom, filterTo, filterCode]);
+
+  const exportCsv = () => {
+    if (!filteredRedemptions.length) return;
+    const header = ['redeemed_at', 'card_code', 'amount', 'note'];
+    const lines = [header.join(',')];
+    for (const r of filteredRedemptions) {
+      lines.push(
+        [
+          r.redeemed_at,
+          csvEscape(r.card_code_snapshot ?? ''),
+          (r.amount_cents / 100).toFixed(2),
+          csvEscape(r.note ?? ''),
+        ].join(','),
+      );
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `redemptions-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -159,8 +199,51 @@ function RedeemPage() {
 
       {/* Recent redemptions */}
       <div className="mt-8 overflow-hidden rounded-sm border border-hairline bg-paper">
-        <div className="border-b border-hairline px-5 py-3">
-          <h2 className="font-display text-[16px] text-ink">Recent redemptions</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-5 py-3">
+          <h2 className="font-display text-[16px] text-ink">Redemptions</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              value={filterCode}
+              onChange={(e) => setFilterCode(e.target.value)}
+              placeholder="Filter by code…"
+              className="h-9 w-40 rounded-sm border border-hairline-strong bg-paper px-2 font-mono text-[12px] text-ink"
+            />
+            <label className="text-[12px] text-ink-muted">From</label>
+            <input
+              type="date"
+              value={filterFrom}
+              onChange={(e) => setFilterFrom(e.target.value)}
+              className="h-9 rounded-sm border border-hairline-strong bg-paper px-2 text-[12px]"
+            />
+            <label className="text-[12px] text-ink-muted">To</label>
+            <input
+              type="date"
+              value={filterTo}
+              onChange={(e) => setFilterTo(e.target.value)}
+              className="h-9 rounded-sm border border-hairline-strong bg-paper px-2 text-[12px]"
+            />
+            {(filterCode || filterFrom || filterTo) && (
+              <button
+                onClick={() => {
+                  setFilterCode('');
+                  setFilterFrom('');
+                  setFilterTo('');
+                }}
+                className="h-9 rounded-sm border border-hairline-strong bg-paper px-2 text-[12px] text-ink-soft hover:bg-paper-soft"
+              >
+                Clear
+              </button>
+            )}
+            <button
+              onClick={exportCsv}
+              disabled={!filteredRedemptions.length}
+              className="inline-flex h-9 items-center gap-1.5 rounded-sm border border-hairline-strong bg-paper px-2.5 text-[12px] text-ink hover:bg-paper-soft disabled:opacity-60"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export
+            </button>
+          </div>
         </div>
         <table className="w-full text-[14px]">
           <thead className="border-b border-hairline bg-paper-soft text-left text-[12px] uppercase tracking-wide text-ink-muted">
@@ -178,14 +261,14 @@ function RedeemPage() {
                   Loading…
                 </td>
               </tr>
-            ) : (recent.data?.length ?? 0) === 0 ? (
+            ) : filteredRedemptions.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-10 text-center text-ink-muted">
-                  No redemptions yet.
+                  {recent.data?.length ? 'No redemptions match these filters.' : 'No redemptions yet.'}
                 </td>
               </tr>
             ) : (
-              recent.data!.map((r) => (
+              filteredRedemptions.map((r) => (
                 <tr key={r.id} className="border-b border-hairline last:border-0">
                   <td className="px-4 py-3 whitespace-nowrap text-ink-soft">
                     {formatDate(r.redeemed_at)}
@@ -217,4 +300,11 @@ function RedeemPage() {
       />
     </DashboardShell>
   );
+}
+
+function csvEscape(v: string): string {
+  if (v.includes(',') || v.includes('"') || v.includes('\n')) {
+    return `"${v.replace(/"/g, '""')}"`;
+  }
+  return v;
 }

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth-context';
 import { DashboardProvider } from '@/lib/dashboard-context';
 import { supabase } from '@/integrations/supabase/client';
-import { LayoutDashboard, BarChart3, Users, Mail, Settings, LogOut, Building2, ScanLine } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Users, Mail, Settings, LogOut, Building2, ScanLine, Gift } from 'lucide-react';
 
 export const Route = createFileRoute('/_dashboard')({
   head: () => ({
@@ -114,6 +114,7 @@ function DashboardLayout() {
               <NavItem to="/dashboard" label="Overview" icon={LayoutDashboard} exact />
               <NavItem to="/dashboard/sales" label="Sales" icon={BarChart3} />
               <NavItem to="/dashboard/redeem" label="Redeem" icon={ScanLine} />
+              <NavItem to="/dashboard/products" label="Products" icon={Gift} />
               <NavItem to="/dashboard/customers" label="Customers" icon={Users} />
               <NavItem to="/dashboard/emails" label="Emails" icon={Mail} />
             </ul>

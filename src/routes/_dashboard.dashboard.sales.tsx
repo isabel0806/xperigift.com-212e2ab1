@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDashboard } from '@/lib/dashboard-context';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,8 +13,27 @@ import {
   CHART_PALETTE,
   HBar,
 } from '@/components/dashboard/primitives';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Upload, Download, Package, ShoppingBag, DollarSign, TrendingUp, LineChart as LineChartIcon, ScanLine } from 'lucide-react';
+import { Upload, Download, Package, Plus, ShoppingBag, DollarSign, TrendingUp, LineChart as LineChartIcon, ScanLine } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { RedeemDialog, type RedeemSale } from '@/components/redeem-dialog';
 
@@ -36,13 +55,38 @@ interface SaleRow {
   product_name: string | null;
 }
 
+interface ProductLite {
+  id: string;
+  name: string;
+  price_cents: number | null;
+  product_type: 'one_time' | 'bundle' | 'open_amount';
+}
+
 function SalesPage() {
   const { activeClientId } = useDashboard();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterProduct, setFilterProduct] = useState<string>('all');
+  const [filterFrom, setFilterFrom] = useState<string>('');
+  const [filterTo, setFilterTo] = useState<string>('');
   const [redeemSale, setRedeemSale] = useState<RedeemSale | null>(null);
+  const [newSaleOpen, setNewSaleOpen] = useState(false);
+
+  const products = useQuery({
+    queryKey: ['gift-card-products-lite', activeClientId],
+    enabled: !!activeClientId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('gift_card_products')
+        .select('id, name, price_cents, product_type')
+        .eq('client_id', activeClientId!)
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as ProductLite[];
+    },
+  });
 
   const sales = useQuery({
     queryKey: ['sales', activeClientId],
@@ -158,21 +202,26 @@ function SalesPage() {
 
   const filtered = useMemo(() => {
     if (!sales.data) return [];
+    const fromTs = filterFrom ? new Date(filterFrom + 'T00:00:00').getTime() : null;
+    const toTs = filterTo ? new Date(filterTo + 'T23:59:59').getTime() : null;
     return sales.data.filter((r) => {
       if (filterStatus !== 'all' && r.status !== filterStatus) return false;
       if (filterProduct !== 'all') {
         const name = r.product_name?.trim() || 'Uncategorized';
         if (name !== filterProduct) return false;
       }
+      const ts = new Date(r.sold_at).getTime();
+      if (fromTs !== null && ts < fromTs) return false;
+      if (toTs !== null && ts > toTs) return false;
       return true;
     });
-  }, [sales.data, filterStatus, filterProduct]);
+  }, [sales.data, filterStatus, filterProduct, filterFrom, filterTo]);
 
   const exportCsv = () => {
-    if (!sales.data?.length) return;
+    if (!filtered.length) return;
     const header = ['sold_at', 'amount', 'redeemed', 'status', 'product_name', 'buyer_name', 'buyer_email', 'recipient_name'];
     const lines = [header.join(',')];
-    for (const r of sales.data) {
+    for (const r of filtered) {
       lines.push(
         [
           r.sold_at,
@@ -226,11 +275,18 @@ function SalesPage() {
           </button>
           <button
             onClick={exportCsv}
-            disabled={!sales.data?.length}
-            className="inline-flex h-9 items-center gap-2 rounded-sm bg-ink px-3 text-[13px] text-paper hover:bg-ink-soft disabled:opacity-60"
+            disabled={!filtered.length}
+            className="inline-flex h-9 items-center gap-2 rounded-sm border border-hairline-strong bg-paper px-3 text-[13px] text-ink hover:bg-paper-soft disabled:opacity-60"
           >
             <Download className="h-4 w-4" />
             Export
+          </button>
+          <button
+            onClick={() => setNewSaleOpen(true)}
+            className="inline-flex h-9 items-center gap-2 rounded-sm bg-ink px-3 text-[13px] text-paper hover:bg-ink-soft"
+          >
+            <Plus className="h-4 w-4" />
+            New sale
           </button>
         </>
       }
@@ -391,7 +447,34 @@ function SalesPage() {
             <option key={p} value={p}>{p}</option>
           ))}
         </select>
-        <p className="text-[13px] text-ink-muted">{filtered.length} rows</p>
+        <label className="text-[13px] text-ink-muted">From</label>
+        <input
+          type="date"
+          value={filterFrom}
+          onChange={(e) => setFilterFrom(e.target.value)}
+          className="rounded-sm border border-hairline-strong bg-paper px-2 h-9 text-[13px]"
+        />
+        <label className="text-[13px] text-ink-muted">To</label>
+        <input
+          type="date"
+          value={filterTo}
+          onChange={(e) => setFilterTo(e.target.value)}
+          className="rounded-sm border border-hairline-strong bg-paper px-2 h-9 text-[13px]"
+        />
+        {(filterFrom || filterTo || filterStatus !== 'all' || filterProduct !== 'all') && (
+          <button
+            onClick={() => {
+              setFilterFrom('');
+              setFilterTo('');
+              setFilterStatus('all');
+              setFilterProduct('all');
+            }}
+            className="h-9 rounded-sm border border-hairline-strong bg-paper px-2 text-[12px] text-ink-soft hover:bg-paper-soft"
+          >
+            Clear
+          </button>
+        )}
+        <p className="ml-auto text-[13px] text-ink-muted">{filtered.length} rows</p>
       </div>
 
       <div className="overflow-hidden rounded-sm border border-hairline bg-paper">
@@ -465,7 +548,245 @@ function SalesPage() {
         open={!!redeemSale}
         onClose={() => setRedeemSale(null)}
       />
+
+      <NewSaleDialog
+        open={newSaleOpen}
+        onClose={() => setNewSaleOpen(false)}
+        clientId={activeClientId}
+        products={products.data ?? []}
+        onCreated={() => {
+          qc.invalidateQueries({ queryKey: ['sales'] });
+          qc.invalidateQueries({ queryKey: ['overview'] });
+          setNewSaleOpen(false);
+        }}
+      />
     </DashboardShell>
+  );
+}
+
+/* --------------------------- New sale dialog --------------------------- */
+
+function NewSaleDialog({
+  open,
+  onClose,
+  clientId,
+  products,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  clientId: string;
+  products: ProductLite[];
+  onCreated: () => void;
+}) {
+  const [productId, setProductId] = useState<string>('');
+  const [productName, setProductName] = useState('');
+  const [amountDollars, setAmountDollars] = useState('');
+  const [soldAt, setSoldAt] = useState(() => new Date().toISOString().slice(0, 16));
+  const [buyerName, setBuyerName] = useState('');
+  const [buyerEmail, setBuyerEmail] = useState('');
+  const [recipientName, setRecipientName] = useState('');
+  const [cardCode, setCardCode] = useState('');
+  const [notes, setNotes] = useState('');
+
+  const reset = () => {
+    setProductId('');
+    setProductName('');
+    setAmountDollars('');
+    setSoldAt(new Date().toISOString().slice(0, 16));
+    setBuyerName('');
+    setBuyerEmail('');
+    setRecipientName('');
+    setCardCode('');
+    setNotes('');
+  };
+
+  const onSelectProduct = (id: string) => {
+    setProductId(id);
+    if (id === '__custom__') {
+      setProductName('');
+      return;
+    }
+    const p = products.find((x) => x.id === id);
+    if (p) {
+      setProductName(p.name);
+      if (p.price_cents != null) {
+        setAmountDollars((p.price_cents / 100).toFixed(2));
+      }
+    }
+  };
+
+  const create = useMutation({
+    mutationFn: async () => {
+      if (!productName.trim()) throw new Error('Product name is required');
+      const cents = Math.round(parseFloat(amountDollars || '0') * 100);
+      if (!cents || cents <= 0) throw new Error('Amount must be greater than 0');
+      const { error } = await supabase.from('gift_card_sales').insert({
+        client_id: clientId,
+        sold_at: new Date(soldAt).toISOString(),
+        amount_cents: cents,
+        redeemed_cents: 0,
+        status: 'sold',
+        product_name: productName.trim(),
+        buyer_name: buyerName.trim() || null,
+        buyer_email: buyerEmail.trim() || null,
+        recipient_name: recipientName.trim() || null,
+        card_code: cardCode.trim() || null,
+        notes: notes.trim() || null,
+        source: 'manual',
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Sale recorded');
+      reset();
+      onCreated();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    create.mutate();
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) {
+          reset();
+          onClose();
+        }
+      }}
+    >
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>New sale</DialogTitle>
+          <DialogDescription>
+            Record a gift card sale. Selecting a product autocompletes the amount.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label>Product</Label>
+            <Select value={productId} onValueChange={onSelectProduct}>
+              <SelectTrigger>
+                <SelectValue placeholder={products.length ? 'Pick from catalog…' : 'No products yet — type one below'} />
+              </SelectTrigger>
+              <SelectContent>
+                {products.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                    {p.price_cents != null && ` · ${formatCurrencyCents(p.price_cents)}`}
+                    {p.product_type === 'open_amount' && ' · open'}
+                  </SelectItem>
+                ))}
+                <SelectItem value="__custom__">Custom (type your own)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {(productId === '__custom__' || !productId) && (
+            <div className="space-y-2">
+              <Label htmlFor="product_name">Product name</Label>
+              <Input
+                id="product_name"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                placeholder="e.g. 60-min massage"
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount (USD)</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                min="0"
+                value={amountDollars}
+                onChange={(e) => setAmountDollars(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sold_at">Sold at</Label>
+              <Input
+                id="sold_at"
+                type="datetime-local"
+                value={soldAt}
+                onChange={(e) => setSoldAt(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="buyer_name">Buyer name</Label>
+              <Input
+                id="buyer_name"
+                value={buyerName}
+                onChange={(e) => setBuyerName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="buyer_email">Buyer email</Label>
+              <Input
+                id="buyer_email"
+                type="email"
+                value={buyerEmail}
+                onChange={(e) => setBuyerEmail(e.target.value)}
+                placeholder="Earns loyalty points"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="recipient_name">Recipient name</Label>
+              <Input
+                id="recipient_name"
+                value={recipientName}
+                onChange={(e) => setRecipientName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="card_code">Card code</Label>
+              <Input
+                id="card_code"
+                value={cardCode}
+                onChange={(e) => setCardCode(e.target.value)}
+                placeholder="For redemption lookup"
+                className="font-mono"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={create.isPending}>
+              {create.isPending ? 'Saving…' : 'Record sale'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

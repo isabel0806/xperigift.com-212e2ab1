@@ -20,6 +20,7 @@ import { Route as DashboardDashboardRouteImport } from './routes/_dashboard.dash
 import { Route as DashboardDashboardIndexRouteImport } from './routes/_dashboard.dashboard.index'
 import { Route as DashboardDashboardSalesRouteImport } from './routes/_dashboard.dashboard.sales'
 import { Route as DashboardDashboardRedeemRouteImport } from './routes/_dashboard.dashboard.redeem'
+import { Route as DashboardDashboardProductsRouteImport } from './routes/_dashboard.dashboard.products'
 import { Route as DashboardDashboardEmailsRouteImport } from './routes/_dashboard.dashboard.emails'
 import { Route as DashboardDashboardCustomersRouteImport } from './routes/_dashboard.dashboard.customers'
 import { Route as DashboardDashboardAdminClientsRouteImport } from './routes/_dashboard.dashboard.admin.clients'
@@ -80,6 +81,12 @@ const DashboardDashboardRedeemRoute =
     path: '/redeem',
     getParentRoute: () => DashboardDashboardRoute,
   } as any)
+const DashboardDashboardProductsRoute =
+  DashboardDashboardProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
+    getParentRoute: () => DashboardDashboardRoute,
+  } as any)
 const DashboardDashboardEmailsRoute =
   DashboardDashboardEmailsRouteImport.update({
     id: '/emails',
@@ -115,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardDashboardRouteWithChildren
   '/dashboard/customers': typeof DashboardDashboardCustomersRoute
   '/dashboard/emails': typeof DashboardDashboardEmailsRoute
+  '/dashboard/products': typeof DashboardDashboardProductsRoute
   '/dashboard/redeem': typeof DashboardDashboardRedeemRoute
   '/dashboard/sales': typeof DashboardDashboardSalesRoute
   '/dashboard/': typeof DashboardDashboardIndexRoute
@@ -130,6 +138,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/dashboard/customers': typeof DashboardDashboardCustomersRoute
   '/dashboard/emails': typeof DashboardDashboardEmailsRoute
+  '/dashboard/products': typeof DashboardDashboardProductsRoute
   '/dashboard/redeem': typeof DashboardDashboardRedeemRoute
   '/dashboard/sales': typeof DashboardDashboardSalesRoute
   '/dashboard': typeof DashboardDashboardIndexRoute
@@ -148,6 +157,7 @@ export interface FileRoutesById {
   '/_dashboard/dashboard': typeof DashboardDashboardRouteWithChildren
   '/_dashboard/dashboard/customers': typeof DashboardDashboardCustomersRoute
   '/_dashboard/dashboard/emails': typeof DashboardDashboardEmailsRoute
+  '/_dashboard/dashboard/products': typeof DashboardDashboardProductsRoute
   '/_dashboard/dashboard/redeem': typeof DashboardDashboardRedeemRoute
   '/_dashboard/dashboard/sales': typeof DashboardDashboardSalesRoute
   '/_dashboard/dashboard/': typeof DashboardDashboardIndexRoute
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard/customers'
     | '/dashboard/emails'
+    | '/dashboard/products'
     | '/dashboard/redeem'
     | '/dashboard/sales'
     | '/dashboard/'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/dashboard/customers'
     | '/dashboard/emails'
+    | '/dashboard/products'
     | '/dashboard/redeem'
     | '/dashboard/sales'
     | '/dashboard'
@@ -198,6 +210,7 @@ export interface FileRouteTypes {
     | '/_dashboard/dashboard'
     | '/_dashboard/dashboard/customers'
     | '/_dashboard/dashboard/emails'
+    | '/_dashboard/dashboard/products'
     | '/_dashboard/dashboard/redeem'
     | '/_dashboard/dashboard/sales'
     | '/_dashboard/dashboard/'
@@ -294,6 +307,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardDashboardRedeemRouteImport
       parentRoute: typeof DashboardDashboardRoute
     }
+    '/_dashboard/dashboard/products': {
+      id: '/_dashboard/dashboard/products'
+      path: '/products'
+      fullPath: '/dashboard/products'
+      preLoaderRoute: typeof DashboardDashboardProductsRouteImport
+      parentRoute: typeof DashboardDashboardRoute
+    }
     '/_dashboard/dashboard/emails': {
       id: '/_dashboard/dashboard/emails'
       path: '/emails'
@@ -328,6 +348,7 @@ declare module '@tanstack/react-router' {
 interface DashboardDashboardRouteChildren {
   DashboardDashboardCustomersRoute: typeof DashboardDashboardCustomersRoute
   DashboardDashboardEmailsRoute: typeof DashboardDashboardEmailsRoute
+  DashboardDashboardProductsRoute: typeof DashboardDashboardProductsRoute
   DashboardDashboardRedeemRoute: typeof DashboardDashboardRedeemRoute
   DashboardDashboardSalesRoute: typeof DashboardDashboardSalesRoute
   DashboardDashboardIndexRoute: typeof DashboardDashboardIndexRoute
@@ -338,6 +359,7 @@ interface DashboardDashboardRouteChildren {
 const DashboardDashboardRouteChildren: DashboardDashboardRouteChildren = {
   DashboardDashboardCustomersRoute: DashboardDashboardCustomersRoute,
   DashboardDashboardEmailsRoute: DashboardDashboardEmailsRoute,
+  DashboardDashboardProductsRoute: DashboardDashboardProductsRoute,
   DashboardDashboardRedeemRoute: DashboardDashboardRedeemRoute,
   DashboardDashboardSalesRoute: DashboardDashboardSalesRoute,
   DashboardDashboardIndexRoute: DashboardDashboardIndexRoute,

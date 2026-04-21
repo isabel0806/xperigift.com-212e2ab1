@@ -99,6 +99,19 @@ function EmailsPage() {
     },
   });
 
+  const send = useMutation({
+    mutationFn: async (draftId: string) => {
+      if (!activeClientId) throw new Error('No client');
+      return await sendCampaign({ data: { clientId: activeClientId, draftId } });
+    },
+    onSuccess: (r) => {
+      toast.success(`Enviado a ${r.sent} de ${r.total}${r.failed ? ` (${r.failed} fallaron)` : ''}`);
+      qc.invalidateQueries({ queryKey: ['email-drafts'] });
+      qc.invalidateQueries({ queryKey: ['email-send-log'] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'No se pudo enviar'),
+  });
+
   if (!activeClientId) {
     return (
       <DashboardShell title="Emails">

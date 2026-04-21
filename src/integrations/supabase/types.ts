@@ -131,6 +131,45 @@ export type Database = {
         }
         Relationships: []
       }
+      client_email_settings: {
+        Row: {
+          client_id: string
+          created_at: string
+          daily_limit: number
+          domain: string | null
+          from_email: string
+          from_name: string
+          id: string
+          is_verified: boolean
+          reply_to_email: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          daily_limit?: number
+          domain?: string | null
+          from_email: string
+          from_name: string
+          id?: string
+          is_verified?: boolean
+          reply_to_email?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          daily_limit?: number
+          domain?: string | null
+          from_email?: string
+          from_name?: string
+          id?: string
+          is_verified?: boolean
+          reply_to_email?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_users: {
         Row: {
           client_id: string
@@ -213,6 +252,8 @@ export type Database = {
           source: string | null
           tags: string[] | null
           total_spent_cents: number
+          unsubscribe_reason: string | null
+          unsubscribed_at: string | null
           updated_at: string
         }
         Insert: {
@@ -231,6 +272,8 @@ export type Database = {
           source?: string | null
           tags?: string[] | null
           total_spent_cents?: number
+          unsubscribe_reason?: string | null
+          unsubscribed_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -249,6 +292,8 @@ export type Database = {
           source?: string | null
           tags?: string[] | null
           total_spent_cents?: number
+          unsubscribe_reason?: string | null
+          unsubscribed_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -275,10 +320,15 @@ export type Database = {
           preheader: string | null
           recipient_customer_ids: string[] | null
           send_at: string | null
+          send_started_at: string | null
           send_to_all: boolean
+          sent_at: string | null
           status: Database["public"]["Enums"]["email_draft_status"]
           subject: string
           submitted_at: string | null
+          total_failed: number
+          total_recipients: number | null
+          total_sent: number
           updated_at: string
         }
         Insert: {
@@ -294,10 +344,15 @@ export type Database = {
           preheader?: string | null
           recipient_customer_ids?: string[] | null
           send_at?: string | null
+          send_started_at?: string | null
           send_to_all?: boolean
+          sent_at?: string | null
           status?: Database["public"]["Enums"]["email_draft_status"]
           subject: string
           submitted_at?: string | null
+          total_failed?: number
+          total_recipients?: number | null
+          total_sent?: number
           updated_at?: string
         }
         Update: {
@@ -313,10 +368,15 @@ export type Database = {
           preheader?: string | null
           recipient_customer_ids?: string[] | null
           send_at?: string | null
+          send_started_at?: string | null
           send_to_all?: boolean
+          sent_at?: string | null
           status?: Database["public"]["Enums"]["email_draft_status"]
           subject?: string
           submitted_at?: string | null
+          total_failed?: number
+          total_recipients?: number | null
+          total_sent?: number
           updated_at?: string
         }
         Relationships: [
@@ -328,6 +388,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_send_log: {
+        Row: {
+          client_id: string
+          created_at: string
+          customer_id: string | null
+          email_draft_id: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          provider_message_id: string | null
+          recipient_email: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["email_send_status"]
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          customer_id?: string | null
+          email_draft_id?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          provider_message_id?: string | null
+          recipient_email: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["email_send_status"]
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          customer_id?: string | null
+          email_draft_id?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          provider_message_id?: string | null
+          recipient_email?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["email_send_status"]
+        }
+        Relationships: []
+      }
+      email_unsubscribe_tokens: {
+        Row: {
+          client_id: string
+          created_at: string
+          customer_id: string | null
+          email: string
+          id: string
+          token: string
+          used_at: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          customer_id?: string | null
+          email: string
+          id?: string
+          token: string
+          used_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          customer_id?: string | null
+          email?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+        }
+        Relationships: []
       }
       gift_card_product_items: {
         Row: {
@@ -673,6 +805,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      process_unsubscribe: {
+        Args: { _reason?: string; _token: string }
+        Returns: Json
+      }
       user_belongs_to_client: {
         Args: { _client_id: string; _user_id: string }
         Returns: boolean
@@ -698,6 +834,14 @@ export type Database = {
         | "scheduled"
         | "sent"
         | "archived"
+      email_send_status:
+        | "pending"
+        | "sent"
+        | "failed"
+        | "bounced"
+        | "complained"
+        | "skipped_unsubscribed"
+        | "skipped_invalid"
       gift_card_product_type: "one_time" | "bundle" | "open_amount"
       gift_card_sale_status:
         | "sold"
@@ -865,6 +1009,15 @@ export const Constants = {
         "scheduled",
         "sent",
         "archived",
+      ],
+      email_send_status: [
+        "pending",
+        "sent",
+        "failed",
+        "bounced",
+        "complained",
+        "skipped_unsubscribed",
+        "skipped_invalid",
       ],
       gift_card_product_type: ["one_time", "bundle", "open_amount"],
       gift_card_sale_status: [

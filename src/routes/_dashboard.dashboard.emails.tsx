@@ -13,12 +13,20 @@ import { sanitizeEmailHtml } from '@/lib/sanitize-html';
 import { toast } from 'sonner';
 import {
   Plus, Save, Send, Trash2, CheckCircle2, Clock, XCircle, Users, Search,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Settings as SettingsIcon, Inbox, Rocket,
+  Mail,
 } from 'lucide-react';
+import {
+  saveEmailSettings,
+  sendTestEmail,
+  sendCampaign,
+} from '@/server/email-campaigns';
 
 export const Route = createFileRoute('/_dashboard/dashboard/emails')({
   component: EmailsPage,
 });
+
+type TabKey = 'campaigns' | 'settings' | 'log';
 
 type ApprovalStatus = 'pending_approval' | 'approved' | 'rejected' | 'sent' | 'cancelled';
 
@@ -48,6 +56,7 @@ function EmailsPage() {
   const { activeClientId } = useDashboard();
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Partial<Draft> | null>(null);
+  const [tab, setTab] = useState<TabKey>('campaigns');
 
   const drafts = useQuery({
     queryKey: ['email-drafts', activeClientId],
@@ -90,6 +99,19 @@ function EmailsPage() {
     },
   });
 
+  const send = useMutation({
+    mutationFn: async (draftId: string) => {
+      if (!activeClientId) throw new Error('No client');
+      return await sendCampaign({ data: { clientId: activeClientId, draftId } });
+    },
+    onSuccess: (r) => {
+      toast.success(`Enviado a ${r.sent} de ${r.total}${r.failed ? ` (${r.failed} fallaron)` : ''}`);
+      qc.invalidateQueries({ queryKey: ['email-drafts'] });
+      qc.invalidateQueries({ queryKey: ['email-send-log'] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'No se pudo enviar'),
+  });
+
   if (!activeClientId) {
     return (
       <DashboardShell title="Emails">
@@ -118,119 +140,468 @@ function EmailsPage() {
   return (
     <DashboardShell
       title="Email campaigns"
-      subtitle="Upload your HTML, schedule a send date, and get it approved before launch."
+      subtitle="Cargá tu HTML, programá la fecha de envío y obtené aprobación antes de lanzarla."
       actions={
-        <button
-          onClick={() => setEditing({
-            subject: '',
-            preheader: '',
-            html_sanitized: '',
-            send_to_all: true,
-            recipient_customer_ids: [],
-          })}
-          className="inline-flex h-9 items-center gap-2 rounded-sm bg-ink px-3 text-[13px] text-paper hover:bg-ink-soft"
-        >
-          <Plus className="h-4 w-4" />
-          New campaign
-        </button>
+        tab === 'campaigns' ? (
+          <button
+            onClick={() => setEditing({
+              subject: '',
+              preheader: '',
+              html_sanitized: '',
+              send_to_all: true,
+              recipient_customer_ids: [],
+            })}
+            className="inline-flex h-9 items-center gap-2 rounded-sm bg-ink px-3 text-[13px] text-paper hover:bg-ink-soft"
+          >
+            <Plus className="h-4 w-4" />
+            New campaign
+          </button>
+        ) : null
       }
     >
-      {pendingCount > 0 && (
-        <div className="mb-5 flex items-center gap-2 rounded-sm border border-[oklch(0.78_0.13_75)] bg-[oklch(0.97_0.04_75)] px-4 py-3 text-[13px] text-[oklch(0.3_0.1_55)]">
-          <Clock className="h-4 w-4" />
-          {pendingCount} {pendingCount === 1 ? 'campaign' : 'campaigns'} waiting for your approval.
-        </div>
+      <TabBar tab={tab} onChange={setTab} pendingCount={pendingCount} />
+
+      {tab === 'campaigns' && (
+        <>
+          {pendingCount > 0 && (
+            <div className="mb-5 flex items-center gap-2 rounded-sm border border-[oklch(0.78_0.13_75)] bg-[oklch(0.97_0.04_75)] px-4 py-3 text-[13px] text-[oklch(0.3_0.1_55)]">
+              <Clock className="h-4 w-4" />
+              {pendingCount} {pendingCount === 1 ? 'campaign' : 'campaigns'} waiting for your approval.
+            </div>
+          )}
+
+          <div className="mb-5">
+            <CampaignCalendar drafts={drafts.data ?? []} onSelectDraft={(d) => setEditing(d)} />
+          </div>
+
+          <div className="overflow-hidden rounded-sm border border-hairline bg-paper">
+            <table className="w-full text-[14px]">
+              <thead className="border-b border-hairline bg-paper-soft text-left text-[12px] uppercase tracking-wide text-ink-muted">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Subject</th>
+                  <th className="px-4 py-3 font-medium">Recipients</th>
+                  <th className="px-4 py-3 font-medium">Send at</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium" />
+                </tr>
+              </thead>
+              <tbody>
+                {drafts.isLoading ? (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-ink-muted">Loading…</td></tr>
+                ) : drafts.data?.length === 0 ? (
+                  <tr><td colSpan={5} className="px-4 py-12 text-center text-ink-muted">
+                    No campaigns yet. Click "New campaign" to draft your first one.
+                  </td></tr>
+                ) : (
+                  drafts.data?.map((d) => (
+                    <tr key={d.id} className="border-b border-hairline last:border-0 align-top">
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => setEditing(d)}
+                          className="text-left text-ink hover:underline"
+                          title="Open campaign"
+                        >
+                          {d.subject || '(untitled)'}
+                        </button>
+                        {d.preheader && (
+                          <div className="text-[12px] text-ink-muted truncate max-w-xs">{d.preheader}</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-ink-soft text-[13px]">
+                        {d.send_to_all ? (
+                          <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" /> All customers</span>
+                        ) : (
+                          `${d.recipient_customer_ids?.length ?? 0} selected`
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-ink-soft text-[13px]">
+                        {d.send_at ? formatDateTime(d.send_at) : <span className="text-ink-muted italic">Not scheduled</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <ApprovalBadge status={d.approval_status} />
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        {d.approval_status === 'pending_approval' ? (
+                          <>
+                            <button
+                              onClick={() => approve.mutate({ id: d.id, approval_status: 'approved' })}
+                              className="inline-flex items-center gap-1 text-[13px] text-emerald-deep hover:underline"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Approve
+                            </button>
+                            <button
+                              onClick={() => approve.mutate({ id: d.id, approval_status: 'rejected' })}
+                              className="ml-3 inline-flex items-center gap-1 text-[13px] text-destructive hover:underline"
+                            >
+                              <XCircle className="h-3.5 w-3.5" /> Reject
+                            </button>
+                          </>
+                        ) : d.approval_status === 'approved' ? (
+                          <button
+                            onClick={() => {
+                              if (confirm(`Enviar "${d.subject}" ahora?`)) send.mutate(d.id);
+                            }}
+                            disabled={send.isPending}
+                            className="inline-flex items-center gap-1 rounded-sm bg-ink px-2.5 py-1 text-[12px] text-paper hover:bg-ink-soft disabled:opacity-60"
+                          >
+                            <Rocket className="h-3.5 w-3.5" />
+                            {send.isPending ? 'Enviando…' : 'Send now'}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setEditing(d)}
+                            className="text-[13px] text-ink-soft hover:text-ink"
+                          >
+                            Edit
+                          </button>
+                        )}
+                        <button
+                          onClick={() => { if (confirm('Delete this campaign?')) del.mutate(d.id); }}
+                          className="ml-3 inline-flex items-center text-ink-muted hover:text-ink"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
-      <div className="mb-5">
-        <CampaignCalendar drafts={drafts.data ?? []} onSelectDraft={(d) => setEditing(d)} />
+      {tab === 'settings' && <SettingsPanel clientId={activeClientId} />}
+      {tab === 'log' && <SendLogPanel clientId={activeClientId} />}
+    </DashboardShell>
+  );
+}
+
+/* --------------------------- Tabs --------------------------- */
+
+function TabBar({
+  tab,
+  onChange,
+  pendingCount,
+}: {
+  tab: TabKey;
+  onChange: (t: TabKey) => void;
+  pendingCount: number;
+}) {
+  const items: Array<{ key: TabKey; label: string; icon: typeof Mail; badge?: number }> = [
+    { key: 'campaigns', label: 'Campañas', icon: Mail, badge: pendingCount > 0 ? pendingCount : undefined },
+    { key: 'settings', label: 'Remitente', icon: SettingsIcon },
+    { key: 'log', label: 'Envíos', icon: Inbox },
+  ];
+  return (
+    <div className="mb-6 flex items-center gap-1 border-b border-hairline">
+      {items.map((it) => {
+        const active = tab === it.key;
+        const Icon = it.icon;
+        return (
+          <button
+            key={it.key}
+            onClick={() => onChange(it.key)}
+            className={`-mb-px inline-flex items-center gap-2 border-b-2 px-3 py-2 text-[13px] ${
+              active
+                ? 'border-ink text-ink'
+                : 'border-transparent text-ink-muted hover:text-ink'
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {it.label}
+            {it.badge ? (
+              <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-sm bg-[oklch(0.97_0.04_75)] px-1.5 text-[11px] text-[oklch(0.3_0.1_55)]">
+                {it.badge}
+              </span>
+            ) : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* --------------------------- Settings panel --------------------------- */
+
+interface EmailSettings {
+  from_email: string;
+  from_name: string;
+  reply_to_email: string | null;
+  domain: string | null;
+  is_verified: boolean;
+}
+
+function SettingsPanel({ clientId }: { clientId: string }) {
+  const qc = useQueryClient();
+  const settings = useQuery({
+    queryKey: ['email-settings', clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('client_email_settings')
+        .select('from_email, from_name, reply_to_email, domain, is_verified')
+        .eq('client_id', clientId)
+        .maybeSingle();
+      if (error) throw error;
+      return (data ?? null) as EmailSettings | null;
+    },
+  });
+
+  const [fromEmail, setFromEmail] = useState('');
+  const [fromName, setFromName] = useState('');
+  const [replyTo, setReplyTo] = useState('');
+  const [testTo, setTestTo] = useState('');
+
+  useEffect(() => {
+    if (settings.data) {
+      setFromEmail(settings.data.from_email);
+      setFromName(settings.data.from_name);
+      setReplyTo(settings.data.reply_to_email ?? '');
+    }
+  }, [settings.data]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      return await saveEmailSettings({
+        data: {
+          clientId,
+          fromEmail,
+          fromName,
+          replyToEmail: replyTo || undefined,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success('Configuración guardada');
+      qc.invalidateQueries({ queryKey: ['email-settings', clientId] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Error al guardar'),
+  });
+
+  const test = useMutation({
+    mutationFn: async () => {
+      return await sendTestEmail({ data: { clientId, to: testTo } });
+    },
+    onSuccess: () => toast.success('Email de prueba enviado'),
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'No se pudo enviar la prueba'),
+  });
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div className="space-y-5 rounded-sm border border-hairline bg-paper p-5">
+        <div>
+          <h2 className="text-[15px] font-medium text-ink">Remitente</h2>
+          <p className="mt-1 text-[12px] text-ink-muted">
+            Estos datos aparecen en la bandeja de tus clientes. El dominio debe
+            estar verificado en tu proveedor de envío para mejorar la entregabilidad.
+          </p>
+        </div>
+
+        <label className="block">
+          <span className="text-[13px] font-medium text-ink">Nombre del remitente</span>
+          <input
+            value={fromName}
+            onChange={(e) => setFromName(e.target.value)}
+            placeholder="Spa Bella"
+            className="mt-2 h-10 w-full rounded-sm border border-hairline-strong bg-paper px-3 text-[14px]"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-[13px] font-medium text-ink">Email del remitente</span>
+          <input
+            type="email"
+            value={fromEmail}
+            onChange={(e) => setFromEmail(e.target.value)}
+            placeholder="hola@tudominio.com"
+            className="mt-2 h-10 w-full rounded-sm border border-hairline-strong bg-paper px-3 text-[14px]"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-[13px] font-medium text-ink">Reply-to (opcional)</span>
+          <input
+            type="email"
+            value={replyTo}
+            onChange={(e) => setReplyTo(e.target.value)}
+            placeholder="respuestas@tudominio.com"
+            className="mt-2 h-10 w-full rounded-sm border border-hairline-strong bg-paper px-3 text-[14px]"
+          />
+        </label>
+
+        <button
+          onClick={() => save.mutate()}
+          disabled={save.isPending || !fromEmail || !fromName}
+          className="inline-flex h-9 items-center gap-2 rounded-sm bg-ink px-3 text-[13px] text-paper hover:bg-ink-soft disabled:opacity-60"
+        >
+          <Save className="h-4 w-4" />
+          {save.isPending ? 'Guardando…' : 'Guardar'}
+        </button>
+      </div>
+
+      <div className="space-y-5 rounded-sm border border-hairline bg-paper p-5">
+        <div>
+          <h2 className="text-[15px] font-medium text-ink">Probar envío</h2>
+          <p className="mt-1 text-[12px] text-ink-muted">
+            Mandate un email de prueba para verificar que la configuración funciona.
+          </p>
+        </div>
+
+        <label className="block">
+          <span className="text-[13px] font-medium text-ink">Enviar prueba a</span>
+          <input
+            type="email"
+            value={testTo}
+            onChange={(e) => setTestTo(e.target.value)}
+            placeholder="vos@tu-email.com"
+            className="mt-2 h-10 w-full rounded-sm border border-hairline-strong bg-paper px-3 text-[14px]"
+          />
+        </label>
+
+        <button
+          onClick={() => test.mutate()}
+          disabled={test.isPending || !testTo || !settings.data}
+          className="inline-flex h-9 items-center gap-2 rounded-sm border border-hairline-strong bg-paper px-3 text-[13px] text-ink hover:bg-paper-soft disabled:opacity-60"
+        >
+          <Send className="h-4 w-4" />
+          {test.isPending ? 'Enviando…' : 'Enviar prueba'}
+        </button>
+
+        {!settings.data && (
+          <p className="text-[12px] text-ink-muted">
+            Guardá primero la configuración del remitente.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* --------------------------- Send log panel --------------------------- */
+
+interface SendLogRow {
+  id: string;
+  recipient_email: string;
+  status: string;
+  error_message: string | null;
+  sent_at: string | null;
+  created_at: string;
+  email_draft_id: string | null;
+}
+
+function SendLogPanel({ clientId }: { clientId: string }) {
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const logs = useQuery({
+    queryKey: ['email-send-log', clientId, statusFilter],
+    queryFn: async () => {
+      let q = supabase
+        .from('email_send_log')
+        .select('id, recipient_email, status, error_message, sent_at, created_at, email_draft_id')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (statusFilter !== 'all') q = q.eq('status', statusFilter as never);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as SendLogRow[];
+    },
+  });
+
+  const stats = useMemo(() => {
+    const rows = logs.data ?? [];
+    return {
+      total: rows.length,
+      sent: rows.filter((r) => r.status === 'sent').length,
+      failed: rows.filter((r) => r.status === 'failed').length,
+      skipped: rows.filter((r) => r.status.startsWith('skipped')).length,
+    };
+  }, [logs.data]);
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Total" value={stats.total} />
+        <StatCard label="Enviados" value={stats.sent} accent="text-emerald-deep" />
+        <StatCard label="Fallidos" value={stats.failed} accent="text-destructive" />
+        <StatCard label="Omitidos" value={stats.skipped} />
+      </div>
+
+      <div className="flex items-center gap-2">
+        {(['all', 'sent', 'failed', 'skipped_unsubscribed'] as const).map((s) => (
+          <button
+            key={s}
+            onClick={() => setStatusFilter(s)}
+            className={`h-8 rounded-sm border px-3 text-[12px] ${
+              statusFilter === s
+                ? 'border-ink bg-ink text-paper'
+                : 'border-hairline-strong bg-paper text-ink hover:bg-paper-soft'
+            }`}
+          >
+            {s === 'all' ? 'Todos' : s === 'sent' ? 'Enviados' : s === 'failed' ? 'Fallidos' : 'Bajas'}
+          </button>
+        ))}
       </div>
 
       <div className="overflow-hidden rounded-sm border border-hairline bg-paper">
-        <table className="w-full text-[14px]">
-          <thead className="border-b border-hairline bg-paper-soft text-left text-[12px] uppercase tracking-wide text-ink-muted">
+        <table className="w-full text-[13px]">
+          <thead className="border-b border-hairline bg-paper-soft text-left text-[11px] uppercase tracking-wide text-ink-muted">
             <tr>
-              <th className="px-4 py-3 font-medium">Subject</th>
-              <th className="px-4 py-3 font-medium">Recipients</th>
-              <th className="px-4 py-3 font-medium">Send at</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium" />
+              <th className="px-4 py-2 font-medium">Email</th>
+              <th className="px-4 py-2 font-medium">Estado</th>
+              <th className="px-4 py-2 font-medium">Fecha</th>
+              <th className="px-4 py-2 font-medium">Detalle</th>
             </tr>
           </thead>
           <tbody>
-            {drafts.isLoading ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-ink-muted">Loading…</td></tr>
-            ) : drafts.data?.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-12 text-center text-ink-muted">
-                No campaigns yet. Click "New campaign" to draft your first one.
+            {logs.isLoading ? (
+              <tr><td colSpan={4} className="px-4 py-8 text-center text-ink-muted">Cargando…</td></tr>
+            ) : (logs.data?.length ?? 0) === 0 ? (
+              <tr><td colSpan={4} className="px-4 py-12 text-center text-ink-muted">
+                Sin envíos todavía.
               </td></tr>
             ) : (
-              drafts.data?.map((d) => (
-                <tr key={d.id} className="border-b border-hairline last:border-0 align-top">
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={() => setEditing(d)}
-                      className="text-left text-ink hover:underline"
-                      title="Open campaign"
-                    >
-                      {d.subject || '(untitled)'}
-                    </button>
-                    {d.preheader && (
-                      <div className="text-[12px] text-ink-muted truncate max-w-xs">{d.preheader}</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-ink-soft text-[13px]">
-                    {d.send_to_all ? (
-                      <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" /> All customers</span>
-                    ) : (
-                      `${d.recipient_customer_ids?.length ?? 0} selected`
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-ink-soft text-[13px]">
-                    {d.send_at ? formatDateTime(d.send_at) : <span className="text-ink-muted italic">Not scheduled</span>}
-                  </td>
-                  <td className="px-4 py-3">
-                    <ApprovalBadge status={d.approval_status} />
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    {d.approval_status === 'pending_approval' ? (
-                      <>
-                        <button
-                          onClick={() => approve.mutate({ id: d.id, approval_status: 'approved' })}
-                          className="inline-flex items-center gap-1 text-[13px] text-emerald-deep hover:underline"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5" /> Approve
-                        </button>
-                        <button
-                          onClick={() => approve.mutate({ id: d.id, approval_status: 'rejected' })}
-                          className="ml-3 inline-flex items-center gap-1 text-[13px] text-destructive hover:underline"
-                        >
-                          <XCircle className="h-3.5 w-3.5" /> Reject
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => setEditing(d)}
-                        className="text-[13px] text-ink-soft hover:text-ink"
-                      >
-                        Edit
-                      </button>
-                    )}
-                    <button
-                      onClick={() => { if (confirm('Delete this campaign?')) del.mutate(d.id); }}
-                      className="ml-3 inline-flex items-center text-ink-muted hover:text-ink"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
+              logs.data?.map((r) => (
+                <tr key={r.id} className="border-b border-hairline last:border-0 align-top">
+                  <td className="px-4 py-2 text-ink">{r.recipient_email}</td>
+                  <td className="px-4 py-2"><SendStatusBadge status={r.status} /></td>
+                  <td className="px-4 py-2 text-ink-muted">{formatDateTime(r.sent_at ?? r.created_at)}</td>
+                  <td className="px-4 py-2 text-ink-muted text-[12px]">{r.error_message ?? '—'}</td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
-    </DashboardShell>
+    </div>
+  );
+}
+
+function StatCard({ label, value, accent }: { label: string; value: number; accent?: string }) {
+  return (
+    <div className="rounded-sm border border-hairline bg-paper p-4">
+      <div className="text-[11px] uppercase tracking-[0.14em] text-ink-muted">{label}</div>
+      <div className={`mt-1 text-[22px] font-medium ${accent ?? 'text-ink'}`}>{value}</div>
+    </div>
+  );
+}
+
+function SendStatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    sent: { label: 'Enviado', cls: 'bg-emerald-soft text-emerald-deep' },
+    pending: { label: 'Pendiente', cls: 'bg-paper-soft text-ink-soft' },
+    failed: { label: 'Fallido', cls: 'bg-[oklch(0.95_0.05_27)] text-destructive' },
+    bounced: { label: 'Rebotado', cls: 'bg-[oklch(0.95_0.05_27)] text-destructive' },
+    complained: { label: 'Spam', cls: 'bg-[oklch(0.95_0.05_27)] text-destructive' },
+    skipped_unsubscribed: { label: 'Dado de baja', cls: 'bg-paper-soft text-ink-muted' },
+    skipped_invalid: { label: 'Inválido', cls: 'bg-paper-soft text-ink-muted' },
+  };
+  const c = map[status] ?? { label: status, cls: 'bg-paper-soft text-ink-muted' };
+  return (
+    <span className={`inline-flex h-5 items-center rounded-sm px-2 text-[11px] font-medium ${c.cls}`}>
+      {c.label}
+    </span>
   );
 }
 

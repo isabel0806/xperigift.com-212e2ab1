@@ -14,13 +14,14 @@ import { toast } from 'sonner';
 import {
   Plus, Save, Send, Trash2, CheckCircle2, Clock, XCircle, Users, Search,
   ChevronLeft, ChevronRight, Settings as SettingsIcon, Inbox, Rocket,
-  Mail,
+  Mail, FileText, BookmarkPlus,
 } from 'lucide-react';
 import {
   saveEmailSettings,
   sendTestEmail,
   sendCampaign,
 } from '@/server/email-campaigns';
+import { TemplatePickerDialog } from './_dashboard.dashboard.templates';
 
 export const Route = createFileRoute('/_dashboard/dashboard/emails')({
   component: EmailsPage,

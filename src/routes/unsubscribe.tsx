@@ -34,7 +34,6 @@ function UnsubscribePage() {
     setError(null);
     const { data, error } = await supabase.rpc('process_unsubscribe', {
       _token: token,
-      _reason: null,
     });
     if (error) {
       setStatus('error');

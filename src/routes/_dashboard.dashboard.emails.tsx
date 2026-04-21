@@ -981,6 +981,26 @@ function DraftEditor({
             Cancel
           </button>
           <button
+            onClick={() => setPickerOpen(true)}
+            className="inline-flex h-9 items-center gap-2 rounded-sm border border-hairline-strong bg-paper px-3 text-[13px] text-ink hover:bg-paper-soft"
+          >
+            <FileText className="h-4 w-4" />
+            Load template
+          </button>
+          <button
+            onClick={() => {
+              if (!rawHtml.trim()) {
+                toast.error('Add some HTML before saving as a template');
+                return;
+              }
+              setSaveAsTplOpen(true);
+            }}
+            className="inline-flex h-9 items-center gap-2 rounded-sm border border-hairline-strong bg-paper px-3 text-[13px] text-ink hover:bg-paper-soft"
+          >
+            <BookmarkPlus className="h-4 w-4" />
+            Save as template
+          </button>
+          <button
             onClick={() => save.mutate('pending_approval')}
             disabled={save.isPending}
             className="inline-flex h-9 items-center gap-2 rounded-sm border border-hairline-strong bg-paper px-3 text-[13px] text-ink hover:bg-paper-soft disabled:opacity-60"

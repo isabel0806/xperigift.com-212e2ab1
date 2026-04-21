@@ -13,12 +13,20 @@ import { sanitizeEmailHtml } from '@/lib/sanitize-html';
 import { toast } from 'sonner';
 import {
   Plus, Save, Send, Trash2, CheckCircle2, Clock, XCircle, Users, Search,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Settings as SettingsIcon, Inbox, Rocket,
+  Mail,
 } from 'lucide-react';
+import {
+  saveEmailSettings,
+  sendTestEmail,
+  sendCampaign,
+} from '@/server/email-campaigns';
 
 export const Route = createFileRoute('/_dashboard/dashboard/emails')({
   component: EmailsPage,
 });
+
+type TabKey = 'campaigns' | 'settings' | 'log';
 
 type ApprovalStatus = 'pending_approval' | 'approved' | 'rejected' | 'sent' | 'cancelled';
 

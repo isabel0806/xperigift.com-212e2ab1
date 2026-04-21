@@ -431,6 +431,63 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          category: string | null
+          client_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          html_content: string
+          id: string
+          is_archived: boolean
+          last_used_at: string | null
+          name: string
+          preheader: string | null
+          subject: string | null
+          tags: string[] | null
+          thumbnail_url: string | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          category?: string | null
+          client_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          html_content: string
+          id?: string
+          is_archived?: boolean
+          last_used_at?: string | null
+          name: string
+          preheader?: string | null
+          subject?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          category?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          html_content?: string
+          id?: string
+          is_archived?: boolean
+          last_used_at?: string | null
+          name?: string
+          preheader?: string | null
+          subject?: string | null
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       email_unsubscribe_tokens: {
         Row: {
           client_id: string

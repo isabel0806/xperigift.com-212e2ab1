@@ -14,13 +14,14 @@ import { toast } from 'sonner';
 import {
   Plus, Save, Send, Trash2, CheckCircle2, Clock, XCircle, Users, Search,
   ChevronLeft, ChevronRight, Settings as SettingsIcon, Inbox, Rocket,
-  Mail,
+  Mail, FileText, BookmarkPlus,
 } from 'lucide-react';
 import {
   saveEmailSettings,
   sendTestEmail,
   sendCampaign,
 } from '@/server/email-campaigns';
+import { TemplatePickerDialog } from './_dashboard.dashboard.templates';
 
 export const Route = createFileRoute('/_dashboard/dashboard/emails')({
   component: EmailsPage,
@@ -858,7 +859,42 @@ function DraftEditor({
   const [sendToAll, setSendToAll] = useState<boolean>(draft.send_to_all ?? true);
   const [recipientIds, setRecipientIds] = useState<string[]>(draft.recipient_customer_ids ?? []);
   const [search, setSearch] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [saveAsTplOpen, setSaveAsTplOpen] = useState(false);
   const { user } = useAuth();
+
+  // If user clicked "Use" on a template card, auto-load it once on mount
+  useEffect(() => {
+    if (draft.id || typeof window === 'undefined') return;
+    const stash = sessionStorage.getItem('xg.useTemplate');
+    if (!stash) return;
+    sessionStorage.removeItem('xg.useTemplate');
+    try {
+      const t = JSON.parse(stash) as {
+        id?: string;
+        subject?: string | null;
+        preheader?: string | null;
+        html_content: string;
+        usage_count?: number;
+      };
+      if (t.subject) setSubject(t.subject);
+      if (t.preheader) setPreheader(t.preheader);
+      if (t.html_content) setRawHtml(t.html_content);
+      if (t.id) {
+        supabase
+          .from('email_templates')
+          .update({
+            usage_count: (t.usage_count ?? 0) + 1,
+            last_used_at: new Date().toISOString(),
+          })
+          .eq('id', t.id)
+          .then(() => {});
+      }
+    } catch {
+      // ignore parse errors
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const customers = useQuery({
     queryKey: ['customers-for-emails', clientId],
@@ -943,6 +979,26 @@ function DraftEditor({
             className="inline-flex h-9 items-center rounded-sm border border-hairline-strong bg-paper px-3 text-[13px] text-ink hover:bg-paper-soft"
           >
             Cancel
+          </button>
+          <button
+            onClick={() => setPickerOpen(true)}
+            className="inline-flex h-9 items-center gap-2 rounded-sm border border-hairline-strong bg-paper px-3 text-[13px] text-ink hover:bg-paper-soft"
+          >
+            <FileText className="h-4 w-4" />
+            Load template
+          </button>
+          <button
+            onClick={() => {
+              if (!rawHtml.trim()) {
+                toast.error('Add some HTML before saving as a template');
+                return;
+              }
+              setSaveAsTplOpen(true);
+            }}
+            className="inline-flex h-9 items-center gap-2 rounded-sm border border-hairline-strong bg-paper px-3 text-[13px] text-ink hover:bg-paper-soft"
+          >
+            <BookmarkPlus className="h-4 w-4" />
+            Save as template
           </button>
           <button
             onClick={() => save.mutate('pending_approval')}
@@ -1105,7 +1161,159 @@ function DraftEditor({
           </div>
         </div>
       </div>
+
+      <TemplatePickerDialog
+        clientId={clientId}
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onPick={(t) => {
+          if (t.subject) setSubject(t.subject);
+          if (t.preheader) setPreheader(t.preheader);
+          setRawHtml(t.html_content);
+          setPickerOpen(false);
+          // bump usage
+          supabase
+            .from('email_templates')
+            .update({
+              usage_count: (t.usage_count ?? 0) + 1,
+              last_used_at: new Date().toISOString(),
+            })
+            .eq('id', t.id)
+            .then(() => {});
+          toast.success(`Loaded "${t.name}"`);
+        }}
+      />
+
+      <SaveAsTemplateDialog
+        clientId={clientId}
+        open={saveAsTplOpen}
+        onClose={() => setSaveAsTplOpen(false)}
+        defaults={{ subject, preheader, html: rawHtml }}
+      />
     </DashboardShell>
+  );
+}
+
+/* ----------------------- Save-as-template dialog ----------------------- */
+
+function SaveAsTemplateDialog({
+  clientId,
+  open,
+  onClose,
+  defaults,
+}: {
+  clientId: string;
+  open: boolean;
+  onClose: () => void;
+  defaults: { subject: string; preheader: string; html: string };
+}) {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('Promotional');
+
+  useEffect(() => {
+    if (open) {
+      setName('');
+      setDescription('');
+      setCategory('Promotional');
+    }
+  }, [open]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!name.trim()) throw new Error('Name is required');
+      if (!user?.id) throw new Error('You must be signed in');
+      const { error } = await supabase.from('email_templates').insert({
+        client_id: clientId,
+        created_by: user.id,
+        name: name.trim(),
+        description: description.trim() || null,
+        category,
+        tags: [],
+        subject: defaults.subject || null,
+        preheader: defaults.preheader || null,
+        html_content: sanitizeEmailHtml(defaults.html),
+      });
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success('Saved to template gallery');
+      qc.invalidateQueries({ queryKey: ['email-templates'] });
+      qc.invalidateQueries({ queryKey: ['email-templates-picker'] });
+      onClose();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : 'Save failed'),
+  });
+
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/30 p-4">
+      <div className="w-full max-w-md rounded-sm border border-hairline bg-paper shadow-xl">
+        <div className="flex items-center justify-between border-b border-hairline px-5 py-3">
+          <h2 className="text-[15px] font-medium text-ink">Save as template</h2>
+          <button
+            onClick={onClose}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-ink-soft hover:bg-paper-soft"
+            aria-label="Close"
+          >
+            <XCircle className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="space-y-4 px-5 py-4">
+          <label className="block">
+            <span className="text-[13px] font-medium text-ink">Name *</span>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoFocus
+              maxLength={120}
+              placeholder="Spring promo — 20% off"
+              className="mt-2 h-10 w-full rounded-sm border border-hairline-strong bg-paper px-3 text-[14px]"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[13px] font-medium text-ink">Description</span>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              placeholder="When to use this"
+              className="mt-2 w-full rounded-sm border border-hairline-strong bg-paper p-3 text-[13px]"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[13px] font-medium text-ink">Category</span>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="mt-2 h-10 w-full rounded-sm border border-hairline-strong bg-paper px-2 text-[14px]"
+            >
+              {['Promotional', 'Newsletter', 'Holiday', 'Welcome', 'Reminder', 'Other'].map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="flex items-center justify-end gap-2 border-t border-hairline px-5 py-3">
+          <button
+            onClick={onClose}
+            className="inline-flex h-9 items-center rounded-sm border border-hairline-strong bg-paper px-3 text-[13px] text-ink hover:bg-paper-soft"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => save.mutate()}
+            disabled={save.isPending || !name.trim()}
+            className="inline-flex h-9 items-center gap-2 rounded-sm bg-ink px-3 text-[13px] text-paper hover:bg-ink-soft disabled:opacity-60"
+          >
+            <Save className="h-4 w-4" />
+            {save.isPending ? 'Saving…' : 'Save template'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

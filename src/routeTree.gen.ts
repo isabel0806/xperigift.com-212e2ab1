@@ -19,6 +19,7 @@ import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardDashboardRouteImport } from './routes/_dashboard.dashboard'
 import { Route as DashboardDashboardIndexRouteImport } from './routes/_dashboard.dashboard.index'
+import { Route as DashboardDashboardTemplatesRouteImport } from './routes/_dashboard.dashboard.templates'
 import { Route as DashboardDashboardSalesRouteImport } from './routes/_dashboard.dashboard.sales'
 import { Route as DashboardDashboardRedeemRouteImport } from './routes/_dashboard.dashboard.redeem'
 import { Route as DashboardDashboardProductsRouteImport } from './routes/_dashboard.dashboard.products'
@@ -76,6 +77,12 @@ const DashboardDashboardIndexRoute = DashboardDashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardDashboardRoute,
 } as any)
+const DashboardDashboardTemplatesRoute =
+  DashboardDashboardTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => DashboardDashboardRoute,
+  } as any)
 const DashboardDashboardSalesRoute = DashboardDashboardSalesRouteImport.update({
   id: '/sales',
   path: '/sales',
@@ -132,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/products': typeof DashboardDashboardProductsRoute
   '/dashboard/redeem': typeof DashboardDashboardRedeemRoute
   '/dashboard/sales': typeof DashboardDashboardSalesRoute
+  '/dashboard/templates': typeof DashboardDashboardTemplatesRoute
   '/dashboard/': typeof DashboardDashboardIndexRoute
   '/dashboard/admin/bookings': typeof DashboardDashboardAdminBookingsRoute
   '/dashboard/admin/clients': typeof DashboardDashboardAdminClientsRoute
@@ -149,6 +157,7 @@ export interface FileRoutesByTo {
   '/dashboard/products': typeof DashboardDashboardProductsRoute
   '/dashboard/redeem': typeof DashboardDashboardRedeemRoute
   '/dashboard/sales': typeof DashboardDashboardSalesRoute
+  '/dashboard/templates': typeof DashboardDashboardTemplatesRoute
   '/dashboard': typeof DashboardDashboardIndexRoute
   '/dashboard/admin/bookings': typeof DashboardDashboardAdminBookingsRoute
   '/dashboard/admin/clients': typeof DashboardDashboardAdminClientsRoute
@@ -169,6 +178,7 @@ export interface FileRoutesById {
   '/_dashboard/dashboard/products': typeof DashboardDashboardProductsRoute
   '/_dashboard/dashboard/redeem': typeof DashboardDashboardRedeemRoute
   '/_dashboard/dashboard/sales': typeof DashboardDashboardSalesRoute
+  '/_dashboard/dashboard/templates': typeof DashboardDashboardTemplatesRoute
   '/_dashboard/dashboard/': typeof DashboardDashboardIndexRoute
   '/_dashboard/dashboard/admin/bookings': typeof DashboardDashboardAdminBookingsRoute
   '/_dashboard/dashboard/admin/clients': typeof DashboardDashboardAdminClientsRoute
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/dashboard/products'
     | '/dashboard/redeem'
     | '/dashboard/sales'
+    | '/dashboard/templates'
     | '/dashboard/'
     | '/dashboard/admin/bookings'
     | '/dashboard/admin/clients'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/dashboard/products'
     | '/dashboard/redeem'
     | '/dashboard/sales'
+    | '/dashboard/templates'
     | '/dashboard'
     | '/dashboard/admin/bookings'
     | '/dashboard/admin/clients'
@@ -225,6 +237,7 @@ export interface FileRouteTypes {
     | '/_dashboard/dashboard/products'
     | '/_dashboard/dashboard/redeem'
     | '/_dashboard/dashboard/sales'
+    | '/_dashboard/dashboard/templates'
     | '/_dashboard/dashboard/'
     | '/_dashboard/dashboard/admin/bookings'
     | '/_dashboard/dashboard/admin/clients'
@@ -313,6 +326,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardDashboardIndexRouteImport
       parentRoute: typeof DashboardDashboardRoute
     }
+    '/_dashboard/dashboard/templates': {
+      id: '/_dashboard/dashboard/templates'
+      path: '/templates'
+      fullPath: '/dashboard/templates'
+      preLoaderRoute: typeof DashboardDashboardTemplatesRouteImport
+      parentRoute: typeof DashboardDashboardRoute
+    }
     '/_dashboard/dashboard/sales': {
       id: '/_dashboard/dashboard/sales'
       path: '/sales'
@@ -371,6 +391,7 @@ interface DashboardDashboardRouteChildren {
   DashboardDashboardProductsRoute: typeof DashboardDashboardProductsRoute
   DashboardDashboardRedeemRoute: typeof DashboardDashboardRedeemRoute
   DashboardDashboardSalesRoute: typeof DashboardDashboardSalesRoute
+  DashboardDashboardTemplatesRoute: typeof DashboardDashboardTemplatesRoute
   DashboardDashboardIndexRoute: typeof DashboardDashboardIndexRoute
   DashboardDashboardAdminBookingsRoute: typeof DashboardDashboardAdminBookingsRoute
   DashboardDashboardAdminClientsRoute: typeof DashboardDashboardAdminClientsRoute
@@ -382,6 +403,7 @@ const DashboardDashboardRouteChildren: DashboardDashboardRouteChildren = {
   DashboardDashboardProductsRoute: DashboardDashboardProductsRoute,
   DashboardDashboardRedeemRoute: DashboardDashboardRedeemRoute,
   DashboardDashboardSalesRoute: DashboardDashboardSalesRoute,
+  DashboardDashboardTemplatesRoute: DashboardDashboardTemplatesRoute,
   DashboardDashboardIndexRoute: DashboardDashboardIndexRoute,
   DashboardDashboardAdminBookingsRoute: DashboardDashboardAdminBookingsRoute,
   DashboardDashboardAdminClientsRoute: DashboardDashboardAdminClientsRoute,

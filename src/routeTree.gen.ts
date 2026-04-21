@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndustriesRouteImport } from './routes/industries'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
@@ -26,6 +27,11 @@ import { Route as DashboardDashboardCustomersRouteImport } from './routes/_dashb
 import { Route as DashboardDashboardAdminClientsRouteImport } from './routes/_dashboard.dashboard.admin.clients'
 import { Route as DashboardDashboardAdminBookingsRouteImport } from './routes/_dashboard.dashboard.admin.bookings'
 
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/how-it-works': typeof HowItWorksRoute
   '/industries': typeof IndustriesRoute
   '/login': typeof LoginRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/dashboard': typeof DashboardDashboardRouteWithChildren
   '/dashboard/customers': typeof DashboardDashboardCustomersRoute
   '/dashboard/emails': typeof DashboardDashboardEmailsRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/how-it-works': typeof HowItWorksRoute
   '/industries': typeof IndustriesRoute
   '/login': typeof LoginRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/dashboard/customers': typeof DashboardDashboardCustomersRoute
   '/dashboard/emails': typeof DashboardDashboardEmailsRoute
   '/dashboard/products': typeof DashboardDashboardProductsRoute
@@ -154,6 +162,7 @@ export interface FileRoutesById {
   '/how-it-works': typeof HowItWorksRoute
   '/industries': typeof IndustriesRoute
   '/login': typeof LoginRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/_dashboard/dashboard': typeof DashboardDashboardRouteWithChildren
   '/_dashboard/dashboard/customers': typeof DashboardDashboardCustomersRoute
   '/_dashboard/dashboard/emails': typeof DashboardDashboardEmailsRoute
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/industries'
     | '/login'
+    | '/unsubscribe'
     | '/dashboard'
     | '/dashboard/customers'
     | '/dashboard/emails'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/industries'
     | '/login'
+    | '/unsubscribe'
     | '/dashboard/customers'
     | '/dashboard/emails'
     | '/dashboard/products'
@@ -207,6 +218,7 @@ export interface FileRouteTypes {
     | '/how-it-works'
     | '/industries'
     | '/login'
+    | '/unsubscribe'
     | '/_dashboard/dashboard'
     | '/_dashboard/dashboard/customers'
     | '/_dashboard/dashboard/emails'
@@ -226,10 +238,18 @@ export interface RootRouteChildren {
   HowItWorksRoute: typeof HowItWorksRoute
   IndustriesRoute: typeof IndustriesRoute
   LoginRoute: typeof LoginRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -390,6 +410,7 @@ const rootRouteChildren: RootRouteChildren = {
   HowItWorksRoute: HowItWorksRoute,
   IndustriesRoute: IndustriesRoute,
   LoginRoute: LoginRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

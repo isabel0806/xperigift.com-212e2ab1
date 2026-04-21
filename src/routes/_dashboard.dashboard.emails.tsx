@@ -859,7 +859,42 @@ function DraftEditor({
   const [sendToAll, setSendToAll] = useState<boolean>(draft.send_to_all ?? true);
   const [recipientIds, setRecipientIds] = useState<string[]>(draft.recipient_customer_ids ?? []);
   const [search, setSearch] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [saveAsTplOpen, setSaveAsTplOpen] = useState(false);
   const { user } = useAuth();
+
+  // If user clicked "Use" on a template card, auto-load it once on mount
+  useEffect(() => {
+    if (draft.id || typeof window === 'undefined') return;
+    const stash = sessionStorage.getItem('xg.useTemplate');
+    if (!stash) return;
+    sessionStorage.removeItem('xg.useTemplate');
+    try {
+      const t = JSON.parse(stash) as {
+        id?: string;
+        subject?: string | null;
+        preheader?: string | null;
+        html_content: string;
+        usage_count?: number;
+      };
+      if (t.subject) setSubject(t.subject);
+      if (t.preheader) setPreheader(t.preheader);
+      if (t.html_content) setRawHtml(t.html_content);
+      if (t.id) {
+        supabase
+          .from('email_templates')
+          .update({
+            usage_count: (t.usage_count ?? 0) + 1,
+            last_used_at: new Date().toISOString(),
+          })
+          .eq('id', t.id)
+          .then(() => {});
+      }
+    } catch {
+      // ignore parse errors
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const customers = useQuery({
     queryKey: ['customers-for-emails', clientId],

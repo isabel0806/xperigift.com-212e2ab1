@@ -56,6 +56,7 @@ function EmailsPage() {
   const { activeClientId } = useDashboard();
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Partial<Draft> | null>(null);
+  const [tab, setTab] = useState<TabKey>('campaigns');
 
   const drafts = useQuery({
     queryKey: ['email-drafts', activeClientId],
